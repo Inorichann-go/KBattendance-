@@ -8469,23 +8469,12 @@ async function init() {
     if (btn) { e.preventDefault(); e.stopImmediatePropagation(); }
   }, true);
 
-  // 세션 복원 or 기본 열람모드
+  // 세션 복원 or 기본 열람모드 (로그인 창 자동 표시 없이 바로 열람모드로 진입)
   const savedMode = sessionStorage.getItem('att_mode') || 'view';
   currentUserName = sessionStorage.getItem('att_user') || '';
   applyMode(savedMode);
 
-  // 프로그램을 여는 순간 로그인 창 자동 표시 (이미 로그인된 세션이 없을 때만)
-  if (savedMode === 'view') {
-    setTimeout(() => {
-      document.getElementById('login-name-input').value = '';
-      document.getElementById('login-pw-input').value = '';
-      document.getElementById('login-error').textContent = '';
-      document.getElementById('admin-login-modal').classList.add('show');
-      setTimeout(() => document.getElementById('login-name-input').focus(), 100);
-    }, 200);
-  } else {
-    setTimeout(loadNotice, 300);
-  }
+  setTimeout(loadNotice, 300);
 }
 init();
 </script>
