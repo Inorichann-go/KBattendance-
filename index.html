@@ -2387,6 +2387,32 @@
   </div>
 </div>
 
+<!-- 개인별 자산 상세 팝업 -->
+<div class="modal-overlay" id="asset-personal-detail-modal">
+  <div class="modal" style="width:620px;max-height:80vh;display:flex;flex-direction:column;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-shrink:0;">
+      <h3 style="margin:0;" id="asset-personal-detail-title"></h3>
+      <button class="btn" onclick="closeModal('asset-personal-detail-modal')" style="padding:4px 10px;font-size:20px;line-height:1;">×</button>
+    </div>
+    <div style="overflow-y:auto;flex:1;">
+      <table class="summary-table" style="table-layout:fixed;width:100%;">
+        <colgroup>
+          <col style="width:90px"><col><col style="width:140px"><col style="width:130px"><col style="width:140px"><col style="width:70px">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>품명</th><th>모델명</th><th>제조번호</th><th>설비번호</th><th>비고</th><th style="text-align:center;">상태</th>
+          </tr>
+        </thead>
+        <tbody id="asset-personal-detail-tbody"></tbody>
+      </table>
+    </div>
+    <div class="modal-btns" style="margin-top:14px;flex-shrink:0;">
+      <button class="btn-save" onclick="closeModal('asset-personal-detail-modal')">닫기</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -4012,7 +4038,7 @@ function openEmpDetail(idx) {
   // 관리자 편집 버튼
   const editBtn = document.getElementById('emp-detail-edit-btn');
   if (editBtn) {
-    editBtn.setAttribute('onclick', `closeModal('emp-detail-modal');showTab(3);showSubTab('hire');`);
+    editBtn.setAttribute('onclick', `closeModal('emp-detail-modal');showTab(3);showSubTab('hire');openHireModal(${idx});`);
   }
   document.getElementById('emp-detail-modal').classList.add('show');
 }
@@ -7593,7 +7619,11 @@ function renderAssetPersonal() {
   tbody.innerHTML = names.map((name, idx) => {
     const counts = byName[name];
     const total = itemTypes.reduce((s,t) => s + counts[t], 0);
-    const cells = itemTypes.map(t => `<td style="text-align:center;font-size:12px;${counts[t]?'':'color:var(--text3);'}">${counts[t] || '-'}</td>`).join('');
+    const nameArg = name.replace(/'/g,"\\'");
+    const cells = itemTypes.map(t => {
+      if (!counts[t]) return `<td style="text-align:center;font-size:12px;color:var(--text3);">-</td>`;
+      return `<td style="text-align:center;font-size:12px;cursor:pointer;color:var(--accent);text-decoration:underline;" onclick="showAssetPersonalDetail('${nameArg}','${t}')" title="클릭하여 상세보기">${counts[t]}</td>`;
+    }).join('');
     const noteVal = (notesByName[name] || []).join(', ');
     const teamVal = teamByName[name] || '';
     const centerVal = getTeamCenter(teamVal);
@@ -7603,11 +7633,37 @@ function renderAssetPersonal() {
       <td style="font-size:12px;color:var(--text2);">${escHtml(centerVal) || '-'}</td>
       <td style="font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escHtml(teamVal)}">${escHtml(teamVal) || '-'}</td>
       ${cells}
-      <td style="text-align:center;font-size:12px;font-weight:700;color:var(--accent);">${total}</td>
+      <td style="text-align:center;font-size:12px;font-weight:700;color:var(--accent);${total?'cursor:pointer;text-decoration:underline;':''}" ${total?`onclick="showAssetPersonalDetail('${nameArg}','')" title="클릭하여 상세보기"`:''}>${total}</td>
       <td style="padding:6px 8px;font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escHtml(noteVal)}">${escHtml(noteVal) || '-'}</td>
     </tr>`;
   }).join('');
   renderAssetDashboard();
+}
+function showAssetPersonalDetail(name, itemType) {
+  const itemTypes = ['모니터','데스크탑','미니PC','노트북','기타'];
+  const list = assetList.filter(a => {
+    const uname = (a.user || '').trim() || '(미지정)';
+    if (uname !== name) return false;
+    if (itemType) {
+      const t = itemTypes.includes(a.item) ? a.item : '기타';
+      if (t !== itemType) return false;
+    }
+    return true;
+  });
+  document.getElementById('asset-personal-detail-title').textContent =
+    name + (itemType ? ' · ' + itemType : ' · 전체 자산') + ' (' + list.length + '건)';
+  const tbody = document.getElementById('asset-personal-detail-tbody');
+  tbody.innerHTML = list.map(a => `
+    <tr style="${a.broken ? 'background:#fff5f5;' : ''}">
+      <td><span style="background:var(--surface2);padding:2px 8px;border-radius:12px;font-size:11px;border:1px solid var(--border);">${escHtml(a.item)}</span></td>
+      <td style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escHtml(a.model)}">${escHtml(a.model)}</td>
+      <td style="font-size:12px;font-family:var(--mono);">${escHtml(a.serial)}</td>
+      <td style="font-size:12px;font-family:var(--mono);">${escHtml(a.assetNo)}</td>
+      <td style="font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escHtml(a.note||'')}">${escHtml(a.note||'') || '-'}</td>
+      <td style="text-align:center;">${a.broken ? '<span style="background:var(--danger);color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;">고장</span>' : '<span style="font-size:11px;color:var(--text3);">정상</span>'}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text3);">내역 없음</td></tr>';
+  document.getElementById('asset-personal-detail-modal').classList.add('show');
 }
 function renderAssetHistory() {
   const wrap = document.getElementById('asset-history-list');
