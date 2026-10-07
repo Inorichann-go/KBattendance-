@@ -783,7 +783,8 @@
     </select>
     <button class="btn btn-warn" onclick="confirmResetMonthAtt()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg> 이달 초기화</button>
     <button class="btn-save" onclick="openPasteModal()" style="background:#16a34a;border-color:#16a34a;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg> 엑셀 붙여넣기</button>
-    <button class="btn" onclick="exportAttExcel()" style="margin-left:auto;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> 엑셀 내보내기</button>
+    <span id="att-month-join-leave" style="margin-left:auto;font-size:13px;color:var(--text2);font-weight:600;"></span>
+    <button class="btn" onclick="exportAttExcel()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> 엑셀 내보내기</button>
   </div>
 
   <div class="card">
@@ -4155,6 +4156,14 @@ function renderAttTable() {
     }
     return tMatch && qMatch && sMatch;
   });
+
+  // 해당월 입사/퇴사 인원 표시
+  const monthStatEl = document.getElementById('att-month-join-leave');
+  if (monthStatEl) {
+    const joinCount = employees.filter(e => e.joinDate && parseInt(e.joinDate.slice(0,4)) === year && parseInt(e.joinDate.slice(5,7)) === month).length;
+    const leaveCount = employees.filter(e => e.leaveDate && parseInt(e.leaveDate.slice(0,4)) === year && parseInt(e.leaveDate.slice(5,7)) === month).length;
+    monthStatEl.textContent = `${year}년 ${month}월 입사 ${joinCount}명 / 퇴사 ${leaveCount}명`;
+  }
 
   // 정렬
   if (sortKey === 'name') emps.sort((a,b) => a.name.localeCompare(b.name,'ko'));
