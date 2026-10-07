@@ -6029,12 +6029,25 @@ function calcAnnualLeave_normal(emp, year, refDate) {
     } else {
       // 2주년 도래 완료 → 비례연차
       // 공식: ceil(15/365 × 남은일수(도래일 당일 포함~12/31) × 8h)
-      grantType = '비례연차';
       const yearEnd2 = new Date(year, 11, 31);
       const remainDays = Math.floor((yearEnd2 - anniv2) / 86400000) + 1; // 당일 포함
-      const grantedHours = Math.ceil(15 / 365 * remainDays * 8);
+
+      // 1주년~2주년 구간 출근율 80% 미만 체크 → 비례 반영
+      const anniv2PeriodStart = new Date(anniv1);
+      const anniv2PeriodEnd   = new Date(anniv2); anniv2PeriodEnd.setDate(anniv2PeriodEnd.getDate()-1);
+      const anniv2TotalDays   = Math.round((anniv2PeriodEnd - anniv2PeriodStart) / 86400000) + 1;
+      const anniv2ActualDays  = calcActualDaysInPeriod(emp, anniv2PeriodStart, anniv2PeriodEnd);
+      const anniv2Rate        = anniv2ActualDays / anniv2TotalDays;
+
+      let grantedHours = Math.ceil(15 / 365 * remainDays * 8);
+      let annivLabel2 = '';
+      if (anniv2Rate < 0.8) {
+        grantedHours = Math.ceil(15 / 365 * remainDays * 8 * anniv2ActualDays / anniv2TotalDays);
+        annivLabel2 = ` (2주년비례:${anniv2ActualDays}/${anniv2TotalDays}일,${Math.round(anniv2Rate*100)}%)`;
+      }
       granted = grantedHours;
       isProportional = true;
+      grantType = `비례연차${annivLabel2}`;
     }
 
   } else {
