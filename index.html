@@ -5586,7 +5586,8 @@ function hasAbsentInMonth(name, year, month) {
 // 1년미만 월별 연차용: 입사일 기준 구간
 // 월별발생 만근체크: 결근 + leaveHistory(병가휴직 등) → 불인정 / 병가 직접입력 → 인정
 const MONTHLY_NG_TYPES = new Set(['결근','병가휴직','가족돌봄휴직','육아휴직','산휴']);
-const PROP_NG_TYPES    = new Set(['결근','병가','병가휴직','가족돌봄','가족돌봄휴직','육아휴직','산휴']);
+// 비례연차(80% 미만 출근 시 비례발생) 대상 결근유형: 산휴·육아휴직은 제외(연차 그대로 발생)
+const PROP_NG_TYPES    = new Set(['결근','병가','병가휴직','가족돌봄','가족돌봄휴직']);
 
 function hasAbsentInRange(name, startDate, endDate) {
   const emp = employees.find(e => e.name === name);
