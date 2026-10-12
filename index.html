@@ -2358,7 +2358,7 @@
 <div class="eval-modal-overlay hidden" id="evalReducedHoursModalOverlay">
   <div class="eval-modal" style="width:380px;">
     <h2>👶 육아단축자 명단</h2>
-    <p style="font-size:11px;color:var(--text-soft);margin:-8px 0 12px;">여기 등록된 사람은 모든 주차에서 CPD·Call Time 실적이 자동으로 2배 보정돼요.</p>
+    <p style="font-size:11px;color:var(--text-soft);margin:-8px 0 12px;">근태상세 &gt; 육아단축 탭의 이력에서, 이 주차 기준일에 육아단축 중인 사람만 자동으로 가져와요. 여기 뜬 사람은 CPD·Call Time 실적이 자동으로 2배 보정돼요. 명단을 바꾸려면 근태상세 &gt; 육아단축 탭에서 이력을 수정해주세요.</p>
     <div id="evalReducedHoursModalBody"></div>
     <div class="modal-actions" style="justify-content:flex-end;">
       <button type="button" class="btn-secondary" onclick="closeEvalReducedHoursModal()">닫기</button>
@@ -9058,16 +9058,6 @@ async function onEvalCallDataUpload(ev){
     }
     if(employees.length===0){ alert('개인별 실적 데이터를 찾지 못했어요. 종합콜현황 파일 형식을 확인해주세요.'); ev.target.value=''; return; }
     const prior = evalStore.weekly[dateKey];
-    let carriedReducedNames = [];
-    if(prior && prior.reducedHoursNames){
-      carriedReducedNames = prior.reducedHoursNames;
-    }else{
-      const priorKeys = Object.keys(evalStore.weekly).filter(k=>k<dateKey).sort();
-      if(priorKeys.length){
-        const latestPrior = evalStore.weekly[priorKeys[priorKeys.length-1]];
-        carriedReducedNames = (latestPrior && latestPrior.reducedHoursNames) || [];
-      }
-    }
     let carriedResigned = [];
     if(prior && prior.resigned){
       carriedResigned = prior.resigned;
@@ -9094,8 +9084,7 @@ async function onEvalCallDataUpload(ev){
       dateKey, sourceFileName: file.name, employees,
       teamMetrics: (prior && prior.teamMetrics) || {},
       resigned: carriedResigned.slice(),
-      under80List: carriedUnder80.slice(),
-      reducedHoursNames: carriedReducedNames.slice()
+      under80List: carriedUnder80.slice()
     };
     evalSelectedWeek = dateKey;
     saveEvalData();
@@ -9162,12 +9151,21 @@ function selectEvalWeek(key){
   renderEvalRefresh();
 }
 
-/* ---- 육아단축자 명단 ---- */
+/* ---- 육아단축자 명단 (근태상세 > 육아단축 탭 이력에서 기준일 기준으로 자동 산출) ---- */
+function getEvalReducedHoursNames(dateKey){
+  if(!dateKey || typeof employees==='undefined') return [];
+  const names = [];
+  employees.forEach(e=>{
+    const active = (e.parentalLeave||[]).some(p=>
+      p.startDate && p.startDate<=dateKey && (!p.endDate || p.endDate>=dateKey));
+    if(active) names.push(e.name);
+  });
+  return names;
+}
 function openEvalReducedHoursModal(){
   const sel = getEvalSelectedWeek();
   const week = evalStore.weekly[sel];
   if(!week){ alert('먼저 종합콜현황 파일을 업로드해주세요.'); return; }
-  if(isEvalWeekLocked(sel)){ alert('마감(잠금)된 주차는 수정할 수 없어요.'); return; }
   renderEvalReducedHoursModalBody();
   document.getElementById('evalReducedHoursModalOverlay').classList.remove('hidden');
 }
@@ -9177,41 +9175,11 @@ function closeEvalReducedHoursModal(){
 function renderEvalReducedHoursModalBody(){
   const body = document.getElementById('evalReducedHoursModalBody');
   const week = evalStore.weekly[getEvalSelectedWeek()];
-  const names = (week && week.reducedHoursNames) || [];
-  const rows = names.map((n,idx)=>`<li class="center-row">
+  const names = week ? getEvalReducedHoursNames(week.dateKey) : [];
+  const rows = names.map(n=>`<li class="center-row">
     <span style="flex:1;font-size:12px;font-weight:600;">${escapeHtml(n)}</span>
-    <button type="button" class="btn-secondary" style="padding:5px 10px;font-size:11px;" onclick="removeEvalReducedHoursName(${idx})">삭제</button>
-  </li>`).join('') || '<li class="empty-state" style="padding:10px 0;">등록된 육아단축자가 없어요.</li>';
-  body.innerHTML = `
-    <ul class="center-list" style="margin-bottom:12px;max-height:400px;">${rows}</ul>
-    <div style="display:flex;gap:6px;">
-      <input type="text" id="evalReducedHoursNameInput" placeholder="이름 입력 후 Enter" style="flex:1;border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;font-family:inherit;" onkeydown="if(event.key==='Enter'){event.preventDefault();addEvalReducedHoursName();}">
-      <button type="button" class="btn-primary" onclick="addEvalReducedHoursName()">추가</button>
-    </div>
-  `;
-  const inp = document.getElementById('evalReducedHoursNameInput');
-  if(inp) inp.focus();
-}
-function addEvalReducedHoursName(){
-  const input = document.getElementById('evalReducedHoursNameInput');
-  const name = input.value.trim();
-  if(!name) return;
-  const week = evalStore.weekly[getEvalSelectedWeek()];
-  if(!week) return;
-  week.reducedHoursNames = week.reducedHoursNames || [];
-  if(!week.reducedHoursNames.includes(name)) week.reducedHoursNames.push(name);
-  input.value='';
-  saveEvalData();
-  renderEvalReducedHoursModalBody();
-  renderEvalRefresh();
-}
-function removeEvalReducedHoursName(idx){
-  const week = evalStore.weekly[getEvalSelectedWeek()];
-  if(!week) return;
-  week.reducedHoursNames.splice(idx,1);
-  saveEvalData();
-  renderEvalReducedHoursModalBody();
-  renderEvalRefresh();
+  </li>`).join('') || '<li class="empty-state" style="padding:10px 0;">이 기준일에 육아단축 중인 사람이 없어요.</li>';
+  body.innerHTML = `<ul class="center-list" style="margin-bottom:0;max-height:400px;">${rows}</ul>`;
 }
 document.getElementById('evalReducedHoursModalOverlay').addEventListener('click',(e)=>{
   if(e.target.id==='evalReducedHoursModalOverlay') closeEvalReducedHoursModal();
@@ -9403,7 +9371,7 @@ function evalDeltaTimeHtml(diffSeconds, opts){
 function computeEvalSummary(dateKey){
   const week = evalStore.weekly[dateKey];
   if(!week) return [];
-  const reducedNames = week.reducedHoursNames || [];
+  const reducedNames = getEvalReducedHoursNames(week.dateKey);
   const evalRefDate = new Date(week.dateKey);
   const withTenure = week.employees.map(e=>({
     ...e,
@@ -9798,7 +9766,7 @@ function deleteEvalEmployee(idx){
   renderEvalRefresh();
 }
 function renderEvalEmployeeTable(week, locked){
-  const reducedNames = week.reducedHoursNames || [];
+  const reducedNames = getEvalReducedHoursNames(week.dateKey);
   const resignTotal = (week.resigned||[]).length;
   const under80Total = (week.under80List||[]).length;
   const query = (evalEmployeeSearchQuery||'').trim().toLowerCase();
@@ -9833,7 +9801,7 @@ function renderEvalEmployeeTable(week, locked){
   return `<div class="duty-report-section">
     <div class="duty-report-section-title">
       <span>👥 개인별 실적 (${query?`검색결과 ${filtered.length}명 / `:''}총 ${week.employees.length}명)${locked?'':' · CPD·CallTime 칸을 클릭하면 수기로 수정할 수 있어요'}</span>
-      <button class="btn-secondary" style="margin-left:auto;" onclick="openEvalReducedHoursModal()" ${locked?'disabled':''}>👶 육아단축자 명단 (${reducedNames.length}명)</button>
+      <button class="btn-secondary" style="margin-left:auto;" onclick="openEvalReducedHoursModal()">👶 육아단축자 명단 (${reducedNames.length}명)</button>
       <button class="btn-secondary" onclick="openEvalUnder80Modal()" ${locked?'disabled':''}>⚠ 80% 미만 근무자 (${under80Total}명)</button>
       <button class="btn-secondary" onclick="openEvalResignModal()" ${locked?'disabled':''}>🚪 퇴사자 명단 (${resignTotal}명)</button>
     </div>
@@ -9868,7 +9836,7 @@ function generateEvalExcel(){
   const sel = getEvalSelectedWeek();
   const week = evalStore.weekly[sel];
   if(!week){ alert('다운로드할 데이터가 없어요.'); return; }
-  const reducedNames = week.reducedHoursNames || [];
+  const reducedNames = getEvalReducedHoursNames(week.dateKey);
   const resigned = week.resigned || [];
   const evalRefDate = new Date(week.dateKey);
 
