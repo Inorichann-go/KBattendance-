@@ -642,11 +642,10 @@
 <div class="tabs">
   <div class="tab active" onclick="showTab(0)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg> Summary</div>
 
-  <div class="tab" onclick="showTab(1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> 월별 요약</div>
-  <div class="tab" onclick="showTab(2)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> 개인 근태</div>
-  <div class="tab" onclick="showTab(3)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> 근태 상세</div>
-  <div class="tab" onclick="showTab(4)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> 연차 현황</div>
-  <div class="tab" onclick="showTab(5)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> 이달의 이슈</div>
+  <div class="tab" onclick="showTab(1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> 개인 근태</div>
+  <div class="tab" onclick="showTab(2)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> 근태 상세</div>
+  <div class="tab" onclick="showTab(3)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> 연차 현황</div>
+  <div class="tab" onclick="showTab(4)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> 이달의 이슈</div>
 
 </div>
 
@@ -660,8 +659,15 @@
 </div>
 
 
-<!-- ═══════════════════════════════ TAB 3: 월별 요약 ═══════════════════════════════ -->
-<div id="panel3" class="panel">
+<!-- ═══════════════════════════════ TAB 1: 개인 근태 ═══════════════════════════════ -->
+<div id="panel2" class="panel">
+  <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px;">
+    <div class="sub-tab active" onclick="showPersonalSubTab('monthly')" id="personal-sub-monthly" style="padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;border-bottom:3px solid var(--accent);color:var(--accent);margin-bottom:-2px;">월별근태</div>
+    <div class="sub-tab" onclick="showPersonalSubTab('summary')" id="personal-sub-summary" style="padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;color:var(--text3);margin-bottom:-2px;">월별요약</div>
+  </div>
+
+  <!-- 월별요약 하위탭 -->
+  <div id="personal-subtab-summary" style="display:none;">
   <div class="ctrl-bar">
     <select class="form-select" id="sum-year" style="width:90px;"></select>
     <select class="form-select" id="sum-month" style="width:80px;"></select>
@@ -749,8 +755,8 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════ TAB 2: 개인 근태 ═══════════════════════════════ -->
-<div id="panel2" class="panel">
+  <!-- 월별근태 하위탭 -->
+  <div id="personal-subtab-monthly">
   <div class="ctrl-bar">
     <select class="form-select" id="att-year" style="width:90px;"></select>
     <select class="form-select" id="att-month" style="width:80px;"></select>
@@ -782,9 +788,10 @@
       </table>
     </div>
   </div>
+  </div>
 </div>
 
-<!-- ═══════════════════════════════ TAB 4: 입퇴사 현황 ═══════════════════════════════ -->
+<!-- ═══════════════════════════════ TAB 3: 입퇴사 현황 ═══════════════════════════════ -->
 <div id="panel4" class="panel">
   <!-- 하위 탭 -->
   <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px;">
@@ -2718,12 +2725,22 @@ function showTab(i) {
   document.querySelectorAll('.tab').forEach((t,j) => t.classList.toggle('active', j===i));
   document.querySelectorAll('.panel').forEach((p,j) => p.classList.toggle('active', j===i));
   if (i===0) { initSummaryDashControls(); renderSummaryDash(); }
-  if (i===1) renderEmpTable();
-  if (i===1) renderSummary();
-  if (i===2) renderAttTable();
-  if (i===3) { initHireResignControls(); showSubTab('emplist'); }
-  if (i===4) renderLeaveTable();
-  if (i===5) { initIssueControls(); renderIssue(); }
+  if (i===1) { renderEmpTable(); showPersonalSubTab('monthly'); }
+  if (i===2) { initHireResignControls(); showSubTab('emplist'); }
+  if (i===3) renderLeaveTable();
+  if (i===4) { initIssueControls(); renderIssue(); }
+}
+function showPersonalSubTab(name) {
+  ['monthly','summary'].forEach(t => {
+    const el = document.getElementById('personal-subtab-'+t);
+    if (el) el.style.display = t===name ? '' : 'none';
+    const btn = document.getElementById('personal-sub-'+t);
+    if (!btn) return;
+    btn.style.color = t===name ? 'var(--accent)' : 'var(--text3)';
+    btn.style.borderBottomColor = t===name ? 'var(--accent)' : 'transparent';
+  });
+  if (name==='monthly') renderAttTable();
+  else if (name==='summary') renderSummary();
 }
 
 // ══════════════════════════════
@@ -3816,7 +3833,7 @@ function openEmpDetail(idx) {
   // 관리자 편집 버튼
   const editBtn = document.getElementById('emp-detail-edit-btn');
   if (editBtn) {
-    editBtn.setAttribute('onclick', `closeModal('emp-detail-modal');showTab(3);showSubTab('hire');openHireModal(${idx});`);
+    editBtn.setAttribute('onclick', `closeModal('emp-detail-modal');showTab(2);showSubTab('hire');openHireModal(${idx});`);
   }
   document.getElementById('emp-detail-modal').classList.add('show');
 }
@@ -4826,7 +4843,7 @@ function saveHireInfo() {
   renderHireTable();
   // 신규 직원 추가면 입퇴사 현황 탭으로 이동
   if (isNaN(idx) || idx < 0) {
-    showTab(3);
+    showTab(2);
     showSubTab('hire');
   }
   showToast('✅ 입사 정보가 저장됐습니다.');
