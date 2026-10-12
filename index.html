@@ -10121,6 +10121,7 @@ function callJehuSheetDayCols(sheetName, rows){
   return {sheetMonth, year, headerRowIdx, dayCols};
 }
 async function onCallObJehuUpload(ev){
+  if(!isAdminMode()){ ev.target.value=''; return; }
   const file = ev.target.files[0]; if(!file) return;
   const target = callInputDate;
   const [ty, tm] = target.split('-').map(Number);
@@ -10163,6 +10164,7 @@ async function onCallObJehuUpload(ev){
 
 /* ---- 2. 장기사고 콜보정 업로드 (일별 시트 여러개 → 선택한 입력일 시트만 읽음) ---- */
 async function onCallObJanggiUpload(ev){
+  if(!isAdminMode()){ ev.target.value=''; return; }
   const file = ev.target.files[0]; if(!file) return;
   const target = callInputDate;
   try{
@@ -10203,11 +10205,13 @@ async function onCallObJanggiUpload(ev){
 
 /* ---- 입력일 데이터 수기 수정 ---- */
 function callEditValue(kind, name, value){
+  if(!isAdminMode()){ renderCallRefresh(); return; }
   const day = callStatsStore[kind][callInputDate] = callStatsStore[kind][callInputDate] || {};
   day[name] = numOrNull(value) || 0;
   saveCallStatsData();
 }
 function callDeleteName(kind, name){
+  if(!isAdminMode()) return;
   const day = callStatsStore[kind][callInputDate]; if(!day) return;
   delete day[name];
   if(!Object.keys(day).length) delete callStatsStore[kind][callInputDate];
@@ -10215,6 +10219,7 @@ function callDeleteName(kind, name){
   renderCallRefresh();
 }
 function callAddName(kind){
+  if(!isAdminMode()) return;
   const nameEl = document.getElementById(`callAddName-${kind}`);
   const valEl = document.getElementById(`callAddVal-${kind}`);
   const name = nameEl.value.trim();
@@ -10226,25 +10231,27 @@ function callAddName(kind){
   renderCallRefresh();
 }
 function callClearDay(kind, label){
+  if(!isAdminMode()) return;
   if(!confirm(`${callFmtDateLabel(callInputDate)} ${label} 데이터를 전부 삭제할까요?`)) return;
   delete callStatsStore[kind][callInputDate];
   saveCallStatsData();
   renderCallRefresh();
 }
 function renderCallDayTable(kind, label){
+  const isAdmin = isAdminMode();
   const day = (callStatsStore[kind]||{})[callInputDate] || {};
   const names = Object.keys(day).sort((a,b)=>a.localeCompare(b,'ko'));
   const total = names.reduce((s,n)=>s+(Number(day[n])||0),0);
   const k = escapeHtml(kind);
   const rows = names.map(n=>`<tr>
       <td style="text-align:left;">${escapeHtml(n)}</td>
-      <td><input type="number" step="any" class="call-edit-input" value="${escapeHtml(String(day[n]))}" data-name="${escapeHtml(n)}" onchange="callEditValue('${k}', this.dataset.name, this.value)"></td>
-      <td><button class="eval-row-delete-btn" title="삭제" data-name="${escapeHtml(n)}" onclick="callDeleteName('${k}', this.dataset.name)">✕</button></td>
+      <td><input type="number" step="any" class="call-edit-input" value="${escapeHtml(String(day[n]))}" data-name="${escapeHtml(n)}" onchange="callEditValue('${k}', this.dataset.name, this.value)" ${isAdmin?'':'disabled'}></td>
+      <td>${isAdmin?`<button class="eval-row-delete-btn" title="삭제" data-name="${escapeHtml(n)}" onclick="callDeleteName('${k}', this.dataset.name)">✕</button>`:''}</td>
     </tr>`).join('');
   return `<div class="duty-report-section" style="margin-bottom:0;">
     <div class="duty-report-section-title" style="justify-content:space-between;">
       <span>${label} · ${names.length}명 · 합계 ${total.toLocaleString()}</span>
-      ${names.length?`<button class="btn-danger-text" onclick="callClearDay('${k}','${label}')">이 날짜 삭제</button>`:''}
+      ${isAdmin && names.length?`<button class="btn-danger-text" onclick="callClearDay('${k}','${label}')">이 날짜 삭제</button>`:''}
     </div>
     <div class="duty-table-scroll" style="max-height:360px;">
       <table class="duty-report-table call-day-table">
@@ -10252,11 +10259,11 @@ function renderCallDayTable(kind, label){
         <tbody>${rows || `<tr><td colspan="3" style="color:var(--text-faint);padding:18px;">이 날짜에 입력된 값이 없어요. 파일을 올리거나 아래에서 직접 추가하세요.</td></tr>`}</tbody>
       </table>
     </div>
-    <div class="call-add-row">
+    ${isAdmin?`<div class="call-add-row">
       <input type="text" id="callAddName-${k}" placeholder="이름" onkeydown="if(event.key==='Enter') callAddName('${k}')">
       <input type="number" step="any" id="callAddVal-${k}" placeholder="값" onkeydown="if(event.key==='Enter') callAddName('${k}')">
       <button class="btn-secondary" onclick="callAddName('${k}')">+ 추가</button>
-    </div>
+    </div>`:''}
   </div>`;
 }
 /* 입력일이 속한 달의 영업일별 입력 현황 (클릭하면 그 날짜로 이동) */
@@ -10344,6 +10351,7 @@ function callFixRawDateKeys(){
 }
 
 async function onCallRawUpload(ev){
+  if(!isAdminMode()){ ev.target.value=''; return; }
   const file = ev.target.files[0]; if(!file) return;
   try{
     const wb = XLSX.read(await file.arrayBuffer(), {type:'array', cellNF:true});
@@ -10400,6 +10408,7 @@ function callRawColumns(records){
   return cols;
 }
 function callEditRawCell(idx, col, value){
+  if(!isAdminMode()){ renderCallRefresh(); return; }
   const rec = ((callStatsStore.raw||{})[callInputDate]||[])[idx]; if(!rec) return;
   const v = value.trim();
   const n = numOrNull(v.replace(/,/g,''));
@@ -10407,6 +10416,7 @@ function callEditRawCell(idx, col, value){
   saveCallStatsData();
 }
 function callDeleteRawRow(idx){
+  if(!isAdminMode()) return;
   const list = (callStatsStore.raw||{})[callInputDate]; if(!list || !list[idx]) return;
   const rec = list[idx];
   if(!confirm(`${rec['이름']||rec['사번']||(idx+1)+'번째'} 행을 삭제할까요?`)) return;
@@ -10416,6 +10426,7 @@ function callDeleteRawRow(idx){
   renderCallRefresh();
 }
 function callAddRawRow(){
+  if(!isAdminMode()) return;
   const list = callStatsStore.raw[callInputDate] = callStatsStore.raw[callInputDate] || [];
   const cols = callRawColumns(list.length ? list : Object.values(callStatsStore.raw).find(l=>l&&l.length) || []);
   const rec = {}; cols.forEach(c=>{ rec[c] = null; });
@@ -10424,6 +10435,7 @@ function callAddRawRow(){
   renderCallRefresh();
 }
 function callClearRawDay(){
+  if(!isAdminMode()) return;
   if(!confirm(`${callFmtDateLabel(callInputDate)} RAW 데이터를 전부 삭제할까요?`)) return;
   delete callStatsStore.raw[callInputDate];
   saveCallStatsData();
@@ -10437,6 +10449,7 @@ function onCallRawFilter(val){
   });
 }
 function renderCallRawTable(){
+  const isAdmin = isAdminMode();
   const list = (callStatsStore.raw||{})[callInputDate] || [];
   const cols = callRawColumns(list);
   const head = cols.map(c=>`<th title="${escapeHtml(c)}">${escapeHtml(c)}</th>`).join('');
@@ -10444,18 +10457,18 @@ function renderCallRawTable(){
     const search = escapeHtml([rec['이름'],rec['사번'],rec['팀'],rec['업무']].filter(Boolean).join(' '));
     const cells = cols.map(c=>{
       const v = rec[c]===null||rec[c]===undefined ? '' : String(rec[c]);
-      return `<td><input class="call-edit-input call-raw-input" value="${escapeHtml(v)}" size="${Math.max(4, Math.min(18, v.length+1))}" data-col="${escapeHtml(c)}" onchange="callEditRawCell(${i}, this.dataset.col, this.value)"></td>`;
+      return `<td><input class="call-edit-input call-raw-input" value="${escapeHtml(v)}" size="${Math.max(4, Math.min(18, v.length+1))}" data-col="${escapeHtml(c)}" onchange="callEditRawCell(${i}, this.dataset.col, this.value)" ${isAdmin?'':'disabled'}></td>`;
     }).join('');
     const hidden = callRawFilter && !search.includes(callRawFilter) ? ' style="display:none;"' : '';
-    return `<tr data-search="${search}"${hidden}><td class="call-raw-del"><button class="eval-row-delete-btn" title="행 삭제" onclick="callDeleteRawRow(${i})">✕</button></td>${cells}</tr>`;
+    return `<tr data-search="${search}"${hidden}><td class="call-raw-del">${isAdmin?`<button class="eval-row-delete-btn" title="행 삭제" onclick="callDeleteRawRow(${i})">✕</button>`:''}</td>${cells}</tr>`;
   }).join('');
   return `<div class="duty-report-section">
     <div class="duty-report-section-title" style="justify-content:space-between;flex-wrap:wrap;">
       <span>③ RAW(상담사실적통계) · ${list.length}건</span>
       <span style="display:flex;gap:8px;align-items:center;">
         ${list.length?`<input class="duty-search-input" placeholder="이름·사번·팀 검색" value="${escapeHtml(callRawFilter)}" oninput="onCallRawFilter(this.value)">`:''}
-        <button class="btn-secondary" onclick="callAddRawRow()">+ 행 추가</button>
-        ${list.length?`<button class="btn-danger-text" onclick="callClearRawDay()">이 날짜 삭제</button>`:''}
+        ${isAdmin?`<button class="btn-secondary" onclick="callAddRawRow()">+ 행 추가</button>`:''}
+        ${isAdmin && list.length?`<button class="btn-danger-text" onclick="callClearRawDay()">이 날짜 삭제</button>`:''}
       </span>
     </div>
     ${list.length ? `<div class="duty-table-scroll" style="max-height:440px;">
@@ -10514,6 +10527,7 @@ const CALL_DEDUCTION_DEFS = {
 };
 function callDeductionRecordKey(rec, def){ return def.fields.map(f=>String(rec[f.key]??'')).join('\t'); }
 function applyCallDeductionPaste(kind, textareaId){
+  if(!isAdminMode()) return;
   const def = CALL_DEDUCTION_DEFS[kind];
   const text = document.getElementById(textareaId).value;
   if(!text.trim()){ alert('붙여넣을 내용이 없어요.'); return; }
@@ -10547,12 +10561,14 @@ function applyCallDeductionPaste(kind, textareaId){
 function applyOffDeductionPaste(){ applyCallDeductionPaste('offDeduction', 'callOffDeductionPasteArea'); }
 function applyAttendanceDeductionPaste(){ applyCallDeductionPaste('attendanceDeduction', 'callAttendanceDeductionPasteArea'); }
 function clearCallOffDeduction(){
+  if(!isAdminMode()) return;
   if(!confirm('휴무차감 기록을 전부 삭제할까요? (모든 날짜)')) return;
   callStatsStore.offDeduction = [];
   saveCallStatsData();
   renderCallRefresh();
 }
 function clearCallAttendanceDeduction(){
+  if(!isAdminMode()) return;
   if(!confirm('근태차감 기록을 전부 삭제할까요? (모든 날짜)')) return;
   callStatsStore.attendanceDeduction = [];
   saveCallStatsData();
@@ -10563,6 +10579,7 @@ function callDeductionDayIndexes(kind){
   return (callStatsStore[kind]||[]).map((r,i)=>callNormalizePastedDate(r['날짜'])===callInputDate ? i : -1).filter(i=>i>=0);
 }
 function callEditDeduction(kind, idx, key, value){
+  if(!isAdminMode()){ renderCallRefresh(); return; }
   const rec = (callStatsStore[kind]||[])[idx]; if(!rec) return;
   const f = CALL_DEDUCTION_DEFS[kind].fields.find(x=>x.key===key);
   const v = value.trim();
@@ -10579,6 +10596,7 @@ function callEditDeduction(kind, idx, key, value){
   saveCallStatsData();
 }
 function callDeleteDeduction(kind, idx){
+  if(!isAdminMode()) return;
   const rec = (callStatsStore[kind]||[])[idx]; if(!rec) return;
   if(!confirm(`${rec['이름']||''} ${CALL_DEDUCTION_DEFS[kind].label} 기록을 삭제할까요?`)) return;
   callStatsStore[kind].splice(idx,1);
@@ -10586,6 +10604,7 @@ function callDeleteDeduction(kind, idx){
   renderCallRefresh();
 }
 function callAddDeduction(kind){
+  if(!isAdminMode()) return;
   const rec = {};
   CALL_DEDUCTION_DEFS[kind].fields.forEach(f=>{ rec[f.key] = f.num ? 0 : ''; });
   rec['날짜'] = callInputDate;
@@ -10594,6 +10613,7 @@ function callAddDeduction(kind){
   renderCallRefresh();
 }
 function callClearDeductionDay(kind){
+  if(!isAdminMode()) return;
   const idxs = callDeductionDayIndexes(kind);
   if(!idxs.length || !confirm(`${callFmtDateLabel(callInputDate)} ${CALL_DEDUCTION_DEFS[kind].label} ${idxs.length}건을 삭제할까요?`)) return;
   const drop = new Set(idxs);
@@ -10602,32 +10622,34 @@ function callClearDeductionDay(kind){
   renderCallRefresh();
 }
 function renderCallDeductionTable(kind){
+  const isAdmin = isAdminMode();
   const def = CALL_DEDUCTION_DEFS[kind];
   const list = callStatsStore[kind] || [];
   const idxs = callDeductionDayIndexes(kind);
   const k = escapeHtml(kind);
   if(!idxs.length) return `<div class="empty-state" style="padding:12px 0;">${callFmtDateLabel(callInputDate)} ${def.label} 기록이 없어요.
-    <button class="btn-secondary" style="margin-left:6px;" onclick="callAddDeduction('${k}')">+ 행 추가</button></div>`;
+    ${isAdmin?`<button class="btn-secondary" style="margin-left:6px;" onclick="callAddDeduction('${k}')">+ 행 추가</button>`:''}</div>`;
   const head = def.fields.map(f=>`<th>${escapeHtml(f.key)}</th>`).join('');
   const body = idxs.map(i=>{
     const rec = list[i];
     const cells = def.fields.map(f=>{
       const v = rec[f.key]===null||rec[f.key]===undefined ? '' : String(rec[f.key]);
-      return `<td><input class="call-edit-input call-raw-input${f.num?' num':''}" value="${escapeHtml(v)}" size="${Math.max(4, Math.min(24, v.length+1))}" data-key="${escapeHtml(f.key)}" onchange="callEditDeduction('${k}', ${i}, this.dataset.key, this.value)"></td>`;
+      return `<td><input class="call-edit-input call-raw-input${f.num?' num':''}" value="${escapeHtml(v)}" size="${Math.max(4, Math.min(24, v.length+1))}" data-key="${escapeHtml(f.key)}" onchange="callEditDeduction('${k}', ${i}, this.dataset.key, this.value)" ${isAdmin?'':'disabled'}></td>`;
     }).join('');
-    return `<tr><td class="call-raw-del"><button class="eval-row-delete-btn" title="삭제" onclick="callDeleteDeduction('${k}', ${i})">✕</button></td>${cells}</tr>`;
+    return `<tr><td class="call-raw-del">${isAdmin?`<button class="eval-row-delete-btn" title="삭제" onclick="callDeleteDeduction('${k}', ${i})">✕</button>`:''}</td>${cells}</tr>`;
   }).join('');
   return `<div class="duty-table-scroll" style="max-height:320px;margin-bottom:8px;">
       <table class="duty-table call-raw-table"><thead><tr><th class="call-raw-del"></th>${head}</tr></thead><tbody>${body}</tbody></table>
     </div>
-    <div class="duty-actions" style="justify-content:flex-start;margin-bottom:12px;">
+    ${isAdmin?`<div class="duty-actions" style="justify-content:flex-start;margin-bottom:12px;">
       <button class="btn-secondary" onclick="callAddDeduction('${k}')">+ 행 추가</button>
       <button class="btn-danger-text" onclick="callClearDeductionDay('${k}')">이 날짜 삭제</button>
-    </div>`;
+    </div>`:''}`;
 }
 
 /* ---- 실적입력 화면 ---- */
 function renderCallInputView(){
+  const isAdmin = isAdminMode();
   if(callFixRawDateKeys()) saveCallStatsData();
   const rawDates = Object.keys(callStatsStore.raw||{}).sort();
   const offCount = (callStatsStore.offDeduction||[]).length;
@@ -10644,7 +10666,7 @@ function renderCallInputView(){
       ${renderCallMonthStrip()}
     </div>
 
-    <div class="duty-upload-grid">
+    ${isAdmin?`<div class="duty-upload-grid">
       <div class="duty-upload-card">
         <div class="duty-upload-title">① 제휴 OB콜백 업로드</div>
         <div class="duty-upload-desc">제휴상담 OB/콜백 월별 파일에서 <b>${callFmtDateLabel(callInputDate)}</b> 컬럼만 읽어요.</div>
@@ -10661,7 +10683,7 @@ function renderCallInputView(){
         <input type="file" accept=".xlsx,.xls" onchange="onCallRawUpload(event)">
         <div style="font-size:10.5px;color:var(--text-faint);margin-top:6px;">저장된 날짜: ${rawDates.length}일 ${rawDates.length?`(${rawDates[0]} ~ ${rawDates[rawDates.length-1]})`:''}</div>
       </div>
-    </div>
+    </div>`:''}
 
     <div class="duty-report-row2">
       ${renderCallDayTable('obJehu', '① 제휴 OB콜백')}
@@ -10673,21 +10695,21 @@ function renderCallInputView(){
     <div class="duty-report-section">
       <div class="duty-report-section-title">④ 휴무차감 (엑셀에서 복사해서 붙여넣기) · [날짜, 이름, 사번, 팀, 구분, 비고] 순서 · 입력일 ${offDay}건 / 전체 ${offCount}건 · 입력일 날짜 행만 등록돼요</div>
       ${renderCallDeductionTable('offDeduction')}
-      <textarea id="callOffDeductionPasteArea" placeholder="엑셀에서 표를 선택해 복사(Ctrl+C)한 뒤 여기에 붙여넣으세요(Ctrl+V)" style="width:100%;min-height:100px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:10px;font-size:11px;font-family:inherit;"></textarea>
+      ${isAdmin?`<textarea id="callOffDeductionPasteArea" placeholder="엑셀에서 표를 선택해 복사(Ctrl+C)한 뒤 여기에 붙여넣으세요(Ctrl+V)" style="width:100%;min-height:100px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:10px;font-size:11px;font-family:inherit;"></textarea>
       <div class="duty-actions" style="margin-top:8px;">
         <button class="btn-danger-text" onclick="clearCallOffDeduction()">모든 날짜 삭제</button>
         <button class="btn-primary" onclick="applyOffDeductionPaste()">반영</button>
-      </div>
+      </div>`:''}
     </div>
 
     <div class="duty-report-section">
       <div class="duty-report-section-title">⑤ 근태차감 (엑셀에서 복사해서 붙여넣기) · [No, 날짜, 이름, 사번, 팀, 구분, 시작시간, 종료시간, 경과시간(분), 급여차감, 차감금액, 사유] 순서 · 입력일 ${attDay}건 / 전체 ${attCount}건 · 입력일 날짜 행만 등록돼요 · 근태차감 항목이 O인 행은 제외돼요</div>
       ${renderCallDeductionTable('attendanceDeduction')}
-      <textarea id="callAttendanceDeductionPasteArea" placeholder="엑셀에서 표를 선택해 복사(Ctrl+C)한 뒤 여기에 붙여넣으세요(Ctrl+V)" style="width:100%;min-height:100px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:10px;font-size:11px;font-family:inherit;"></textarea>
+      ${isAdmin?`<textarea id="callAttendanceDeductionPasteArea" placeholder="엑셀에서 표를 선택해 복사(Ctrl+C)한 뒤 여기에 붙여넣으세요(Ctrl+V)" style="width:100%;min-height:100px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:10px;font-size:11px;font-family:inherit;"></textarea>
       <div class="duty-actions" style="margin-top:8px;">
         <button class="btn-danger-text" onclick="clearCallAttendanceDeduction()">모든 날짜 삭제</button>
         <button class="btn-primary" onclick="applyAttendanceDeductionPaste()">반영</button>
-      </div>
+      </div>`:''}
     </div>
   </div>`;
 }
@@ -10871,6 +10893,7 @@ function callSummaryStepRef(step){
   callSummaryRefDate = d; renderCallSummaryRefresh();
 }
 function callSummarySavePeriod(){
+  if(!isAdminMode()) return;
   callEnsureSummaryStore();
   const name = document.getElementById('csPeriodName').value.trim();
   const start = document.getElementById('csPeriodStart').value, end = document.getElementById('csPeriodEnd').value;
@@ -10885,6 +10908,7 @@ function callSummarySavePeriod(){
   saveCallStatsData(); renderCallSummaryRefresh();
 }
 function callSummaryEditPeriod(id){
+  if(!isAdminMode()) return;
   const p = (callStatsStore.periods||[]).find(x=>x.id===id); if(!p) return;
   document.getElementById('csPeriodEditId').value = p.id;
   document.getElementById('csPeriodName').value = p.name;
@@ -10894,6 +10918,7 @@ function callSummaryEditPeriod(id){
   document.getElementById('csPeriodEditor').open = true;
 }
 function callSummaryDeletePeriod(id){
+  if(!isAdminMode()) return;
   const p = (callStatsStore.periods||[]).find(x=>x.id===id); if(!p) return;
   if(!confirm(`"${p.name}" 기간을 삭제할까요? (실적 데이터는 지워지지 않아요)`)) return;
   callStatsStore.periods = callStatsStore.periods.filter(x=>x.id!==id);
@@ -10903,6 +10928,7 @@ function callSummaryDeletePeriod(id){
 
 /* ---- 상담사 명단 ---- */
 function callRosterEdit(idx, key, value){
+  if(!isAdminMode()){ setTimeout(renderCallSummaryRefresh, 0); return; }
   const p = (callStatsStore.roster||[])[idx]; if(!p) return;
   if(key==='shortTime') p.shortTime = !!value;
   else p[key] = String(value).trim();
@@ -10910,12 +10936,14 @@ function callRosterEdit(idx, key, value){
   setTimeout(renderCallSummaryRefresh, 0);
 }
 function callRosterDelete(idx){
+  if(!isAdminMode()) return;
   const p = (callStatsStore.roster||[])[idx]; if(!p) return;
   if(!confirm(`${p.name}님을 명단에서 뺄까요?`)) return;
   callStatsStore.roster.splice(idx,1);
   saveCallStatsData(); renderCallSummaryRefresh();
 }
 function callRosterAdd(sabun, name, team){
+  if(!isAdminMode()) return;
   callEnsureSummaryStore();
   callStatsStore.roster.push({ sabun: sabun||'', name: name||'', team: team||'', hireDate:'', shortTime:false });
   saveCallStatsData(); renderCallSummaryRefresh();
@@ -10924,6 +10952,7 @@ function callRosterAddFromRaw(sabun, name, rawTeam){ callRosterAdd(sabun, name, 
 /* 상담사 명단 엑셀(이름·사번·팀·입사일·근무시간) 업로드
    근무시간 8 = 일반, 4 이하 = 단시간(근무일 240분 기준). 육아단축은 명단 표에서 직접 입력하며, 다시 올려도 사번 기준으로 유지돼요. */
 async function onCallRosterImport(ev){
+  if(!isAdminMode()){ ev.target.value=''; return; }
   const file = ev.target.files[0]; if(!file) return;
   ev.target.value = '';
   try{
@@ -10977,6 +11006,7 @@ function downloadCallRosterTemplate(){
 
 /* ---- 육아단축 근무 (시작일~종료일, 근무시간) ---- */
 function callChildcareAdd(){
+  if(!isAdminMode()) return;
   callEnsureSummaryStore();
   /* 검색창 값: 목록에서 고른 "이름 (팀·사번)" 또는 이름/사번 직접 입력 */
   const q = document.getElementById('csCcPerson').value.trim();
@@ -10999,6 +11029,7 @@ function callChildcareAdd(){
   saveCallStatsData(); renderCallSummaryRefresh();
 }
 function callChildcareEdit(id, key, value){
+  if(!isAdminMode()){ setTimeout(renderCallSummaryRefresh,0); return; }
   const c = (callStatsStore.childcare||[]).find(x=>x.id===id); if(!c) return;
   if(key==='hours'){
     const h = Number(value);
@@ -11013,22 +11044,24 @@ function callChildcareEdit(id, key, value){
   saveCallStatsData(); setTimeout(renderCallSummaryRefresh,0);
 }
 function callChildcareDelete(id){
+  if(!isAdminMode()) return;
   const c = (callStatsStore.childcare||[]).find(x=>x.id===id); if(!c) return;
   if(!confirm(`${c.name}님의 육아단축(${c.start} ~ ${c.end||'계속'})을 삭제할까요?`)) return;
   callStatsStore.childcare = callStatsStore.childcare.filter(x=>x.id!==id);
   saveCallStatsData(); renderCallSummaryRefresh();
 }
 function renderCallChildcareSection(){
+  const isAdmin = isAdminMode();
   const list = (callStatsStore.childcare||[]).slice().sort((a,b)=>(a.start||'').localeCompare(b.start||''));
   const roster = callStatsStore.roster||[];
   const personOpts = roster.slice().sort((a,b)=>a.name.localeCompare(b.name,'ko'))
     .map(p=>`<option value="${escapeHtml(`${p.name} (${p.team||'팀 없음'}·${p.sabun})`)}"></option>`).join('');
   const rows = list.map(c=>`<tr>
-      <td class="call-raw-del"><button class="eval-row-delete-btn" title="삭제" onclick="callChildcareDelete('${c.id}')">✕</button></td>
+      <td class="call-raw-del">${isAdmin?`<button class="eval-row-delete-btn" title="삭제" onclick="callChildcareDelete('${c.id}')">✕</button>`:''}</td>
       <td style="text-align:left;font-weight:600;">${escapeHtml(c.name)} <span style="color:var(--text-faint);">${escapeHtml(c.sabun||'')}</span></td>
-      <td><input type="date" class="duty-month-select" value="${c.start||''}" onchange="callChildcareEdit('${c.id}','start',this.value)"></td>
-      <td><input type="date" class="duty-month-select" value="${c.end||''}" onchange="callChildcareEdit('${c.id}','end',this.value)"></td>
-      <td><input class="call-edit-input call-raw-input num" value="${c.hours}" size="3" onchange="callChildcareEdit('${c.id}','hours',this.value)"> 시간</td>
+      <td><input type="date" class="duty-month-select" value="${c.start||''}" onchange="callChildcareEdit('${c.id}','start',this.value)" ${isAdmin?'':'disabled'}></td>
+      <td><input type="date" class="duty-month-select" value="${c.end||''}" onchange="callChildcareEdit('${c.id}','end',this.value)" ${isAdmin?'':'disabled'}></td>
+      <td><input class="call-edit-input call-raw-input num" value="${c.hours}" size="3" onchange="callChildcareEdit('${c.id}','hours',this.value)" ${isAdmin?'':'disabled'}> 시간</td>
       <td>하루 ${Math.round((8-(Number(c.hours)||0))*60)}분</td>
       <td style="color:var(--text-soft);">${c.end?'':'종료일 없음(계속)'}</td>
     </tr>`).join('');
@@ -11037,14 +11070,14 @@ function renderCallChildcareSection(){
     ${list.length?`<div class="duty-table-scroll" style="max-height:320px;margin-top:10px;">
       <table class="duty-table call-raw-table"><thead><tr><th class="call-raw-del"></th><th>상담사</th><th>시작일</th><th>종료일</th><th>근무시간</th><th>보정</th><th></th></tr></thead><tbody>${rows}</tbody></table>
     </div>`:''}
-    <div class="call-add-row" style="flex-wrap:wrap;align-items:center;">
+    ${isAdmin?`<div class="call-add-row" style="flex-wrap:wrap;align-items:center;">
       <input type="search" id="csCcPerson" list="csCcPeople" placeholder="${roster.length?'🔍 이름·사번 검색':'명단을 먼저 올려주세요'}" autocomplete="off" style="width:230px;height:30px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:0 10px;font-size:12px;font-family:inherit;">
       <datalist id="csCcPeople">${personOpts}</datalist>
       <span>시작</span><input type="date" id="csCcStart" style="width:auto;">
       <span>종료</span><input type="date" id="csCcEnd" style="width:auto;" title="비우면 계속 적용">
       <span>근무</span><input type="number" id="csCcHours" placeholder="예: 6" step="0.5" min="0.5" max="7.5" style="width:70px;"><span>시간</span>
       <button class="btn-primary" onclick="callChildcareAdd()">+ 추가</button>
-    </div>
+    </div>`:''}
     <div class="duty-month-hint" style="margin-top:6px;">종료일을 비우면 계속 적용돼요. 월 중간에 끝나면 종료일까지만 보정해요. 그 기간 휴무일은 보정에서 빠져요.</div>
   </details>`;
 }
@@ -11086,23 +11119,24 @@ function callSummaryHead(firstCols, ref){
   </thead>`;
 }
 function renderCallSummaryView(){
+  const isAdmin = isAdminMode();
   callEnsureSummaryStore();
   const periods = callStatsStore.periods;
   const period = callSummaryPeriod();
   const periodOpts = periods.map(p=>`<option value="${p.id}" ${period&&p.id===period.id?'selected':''}>${escapeHtml(p.name)} (${p.start} ~ ${p.end})</option>`).join('');
   const periodList = periods.map(p=>`<li class="center-row"><span style="flex:1;font-size:12px;">${escapeHtml(p.name)} · ${p.start} ~ ${p.end}</span>
-      <button class="btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="callSummaryEditPeriod('${p.id}')">수정</button>
-      <button class="btn-danger-text" onclick="callSummaryDeletePeriod('${p.id}')">삭제</button></li>`).join('');
+      ${isAdmin?`<button class="btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="callSummaryEditPeriod('${p.id}')">수정</button>
+      <button class="btn-danger-text" onclick="callSummaryDeletePeriod('${p.id}')">삭제</button>`:''}</li>`).join('');
   const periodEditor = `<details class="duty-report-section" id="csPeriodEditor" ${periods.length?'':'open'}>
     <summary class="duty-report-section-title" style="cursor:pointer;margin:0;">🗓️ 기간 관리 · 매달 시작일·종료일을 직접 정해요</summary>
     <ul class="center-list" style="margin:10px 0;">${periodList || '<li class="empty-state" style="padding:6px 0;">등록된 기간이 없어요. 먼저 기간을 추가해주세요.</li>'}</ul>
-    <div class="call-add-row" style="flex-wrap:wrap;">
+    ${isAdmin?`<div class="call-add-row" style="flex-wrap:wrap;">
       <input type="hidden" id="csPeriodEditId" value="">
       <input type="text" id="csPeriodName" placeholder="이름 (예: 10월)" style="flex:0 0 120px;">
       <input type="date" id="csPeriodStart" style="width:auto;"> <span style="align-self:center;">~</span>
       <input type="date" id="csPeriodEnd" style="width:auto;">
       <button class="btn-primary" id="csPeriodSaveBtn" onclick="callSummarySavePeriod()">기간 추가</button>
-    </div>
+    </div>`:''}
   </details>`;
   if(!period) return `<div class="duty-report-view">${periodEditor}</div>`;
 
@@ -11128,15 +11162,15 @@ function renderCallSummaryView(){
 
   const teamOpts = cur=>['', ...CALL_TEAMS].map(t=>`<option value="${t}" ${t===cur?'selected':''}>${t||'(팀 선택)'}</option>`).join('');
   const rosterRows = roster.map((p,i)=>`<tr>
-      <td class="call-raw-del"><button class="eval-row-delete-btn" title="빼기" onclick="callRosterDelete(${i})">✕</button></td>
-      <td><input class="call-edit-input call-raw-input" value="${escapeHtml(p.name)}" size="8" onchange="callRosterEdit(${i},'name',this.value)"></td>
-      <td><input class="call-edit-input call-raw-input" value="${escapeHtml(p.sabun)}" size="9" onchange="callRosterEdit(${i},'sabun',this.value)"></td>
-      <td><select class="duty-month-select" onchange="callRosterEdit(${i},'team',this.value)">${teamOpts(p.team)}</select></td>
-      <td><input class="call-edit-input call-raw-input" value="${escapeHtml(p.hireDate||'')}" size="10" onchange="callRosterEdit(${i},'hireDate',this.value)"></td>
-      <td><input type="checkbox" ${p.shortTime?'checked':''} onchange="callRosterEdit(${i},'shortTime',this.checked)"></td>
+      <td class="call-raw-del">${isAdmin?`<button class="eval-row-delete-btn" title="빼기" onclick="callRosterDelete(${i})">✕</button>`:''}</td>
+      <td><input class="call-edit-input call-raw-input" value="${escapeHtml(p.name)}" size="8" onchange="callRosterEdit(${i},'name',this.value)" ${isAdmin?'':'disabled'}></td>
+      <td><input class="call-edit-input call-raw-input" value="${escapeHtml(p.sabun)}" size="9" onchange="callRosterEdit(${i},'sabun',this.value)" ${isAdmin?'':'disabled'}></td>
+      <td><select class="duty-month-select" onchange="callRosterEdit(${i},'team',this.value)" ${isAdmin?'':'disabled'}>${teamOpts(p.team)}</select></td>
+      <td><input class="call-edit-input call-raw-input" value="${escapeHtml(p.hireDate||'')}" size="10" onchange="callRosterEdit(${i},'hireDate',this.value)" ${isAdmin?'':'disabled'}></td>
+      <td><input type="checkbox" ${p.shortTime?'checked':''} onchange="callRosterEdit(${i},'shortTime',this.checked)" ${isAdmin?'':'disabled'}></td>
     </tr>`).join('');
   const notIn = res.notInRoster.map(x=>`<li class="center-row"><span style="flex:1;font-size:12px;">${escapeHtml(x.name)} · ${escapeHtml(x.sabun)} · ${escapeHtml(x.rawTeam)}</span>
-      <button class="btn-secondary" style="padding:4px 10px;font-size:11px;" data-sab="${escapeHtml(x.sabun)}" data-name="${escapeHtml(x.name)}" data-team="${escapeHtml(x.rawTeam)}" onclick="callRosterAddFromRaw(this.dataset.sab,this.dataset.name,this.dataset.team)">+ 명단에 추가</button></li>`).join('');
+      ${isAdmin?`<button class="btn-secondary" style="padding:4px 10px;font-size:11px;" data-sab="${escapeHtml(x.sabun)}" data-name="${escapeHtml(x.name)}" data-team="${escapeHtml(x.rawTeam)}" onclick="callRosterAddFromRaw(this.dataset.sab,this.dataset.name,this.dataset.team)">+ 명단에 추가</button>`:''}</li>`).join('');
 
   return `<div class="duty-report-view">
     <div class="duty-month-bar">
@@ -11180,9 +11214,9 @@ function renderCallSummaryView(){
     <details class="duty-report-section" id="csRosterBox">
       <summary class="duty-report-section-title" style="cursor:pointer;margin:0;">👥 상담사 명단 (${roster.length}명)${res.notInRoster.length?` · RAW에만 있는 상담사 ${res.notInRoster.length}명`:''}</summary>
       <div class="eval-metric-upload" style="margin-top:10px;">
-        <label class="btn-secondary">📤 상담사 명단 업로드<input type="file" accept=".xlsx,.xls" hidden onchange="onCallRosterImport(event)"></label>
+        ${isAdmin?`<label class="btn-secondary">📤 상담사 명단 업로드<input type="file" accept=".xlsx,.xls" hidden onchange="onCallRosterImport(event)"></label>`:''}
         <button class="btn-secondary" onclick="downloadCallRosterTemplate()">📥 양식 다운로드</button>
-        <button class="btn-secondary" onclick="callRosterAdd()">+ 직접 추가</button>
+        ${isAdmin?`<button class="btn-secondary" onclick="callRosterAdd()">+ 직접 추가</button>`:''}
         <span class="duty-month-hint" style="flex-basis:auto;">양식: 이름 · 사번 · 팀 · 입사일. 이름은 OB·휴무·근태 데이터와 맞출 때 쓰여요(대소문자 무시). 단시간(4시간) 근무자는 표에서 체크하면 근무일을 240분 기준으로 계산하고, 다시 올려도 유지돼요.</span>
       </div>
       ${roster.length?`<div class="duty-table-scroll" style="max-height:420px;margin-top:10px;">
