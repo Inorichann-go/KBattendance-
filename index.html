@@ -9245,6 +9245,7 @@ document.getElementById('evalUnder80ModalOverlay').addEventListener('click',(e)=
 
 /* ---- 팀별 지표(TOP2/NPS/발신율/민원건수) 입력 ---- */
 function updateEvalTeamMetric(team, field, value){
+  if(!isAdminMode()){ renderEvalRefresh(); return; }
   const sel = getEvalSelectedWeek();
   const week = evalStore.weekly[sel];
   if(!week) return;
@@ -9525,6 +9526,7 @@ function evalPercentValue(cell, assumeFraction){
 }
 function evalSheetCell(ws, r, c){ return ws[XLSX.utils.encode_cell({r, c})]; }
 async function onEvalMetricFileUpload(ev, kind){
+  if(!isAdminMode()){ ev.target.value=''; return; }
   const file = ev.target.files[0]; if(!file) return;
   ev.target.value = '';
   const sel = getEvalSelectedWeek();
@@ -9600,7 +9602,7 @@ function onEvalMetricKeydown(ev, team, field){
 }
 function renderEvalTeamMetricInputs(week, locked){
   const tm = week.teamMetrics || {};
-  const dis = locked ? 'disabled' : '';
+  const dis = (locked || !isAdminMode()) ? 'disabled' : '';
   const rows = EVAL_TEAMS.map(team=>{
     const m = tm[team] || {};
     return `<tr>
@@ -9613,9 +9615,9 @@ function renderEvalTeamMetricInputs(week, locked){
   }).join('');
   return `<div class="duty-report-section">
     <div class="duty-report-section-title">✏️ 팀별 지표 입력 (TOP2 · NPS · 발신율 · 민원건수) · 값 입력 후 Enter 누르면 다음 팀으로 이동</div>
-    ${locked ? '' : `<div class="eval-metric-upload">
-      <label class="btn-secondary">📤 고객만족도(상담사별) 업로드 → TOP2·NPS<input type="file" accept=".xlsx,.xls" hidden onchange="onEvalMetricFileUpload(event,'csat')"></label>
-      <label class="btn-secondary">📤 관리자만족도 업로드 → 발신율<input type="file" accept=".xlsx,.xls" hidden onchange="onEvalMetricFileUpload(event,'outbound')"></label>
+    ${(locked || !isAdminMode()) ? '' : `<div class="eval-metric-upload">
+      <label class="btn-secondary admin-only">📤 고객만족도(상담사별) 업로드 → TOP2·NPS<input type="file" accept=".xlsx,.xls" hidden onchange="onEvalMetricFileUpload(event,'csat')"></label>
+      <label class="btn-secondary admin-only">📤 관리자만족도 업로드 → 발신율<input type="file" accept=".xlsx,.xls" hidden onchange="onEvalMetricFileUpload(event,'outbound')"></label>
       <span class="duty-month-hint" style="flex-basis:auto;">업로드하면 아래 칸이 자동으로 채워지고, 직접 고칠 수도 있어요. 민원건수는 직접 입력해주세요.</span>
     </div>`}
     <div style="overflow-x:auto;">
