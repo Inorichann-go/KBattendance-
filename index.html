@@ -7147,12 +7147,16 @@ function renderIssue() {
   const onLeaveHtml = onLeave.length ? `<table class="issue-table">
     <thead><tr><th>성명</th><th>팀</th><th>사번</th><th>휴직구분</th><th>시작일</th><th>종료일</th></tr></thead><tbody>
     ${onLeave.map(e => {
-      const l = e.leaveHistory.find(l => {
+      // 같은 달에 휴직 유형이 바뀌는 경우(예: 육아휴직 → 육아휴직(부모연장) 이어서 사용)를
+      // 모두 표시하기 위해 겹치는 구간 전체를 찾는다 (find가 아닌 filter)
+      const matches = e.leaveHistory.filter(l => {
         if (!l.startDate) return false;
         const s = new Date(l.startDate.replace(/-/g,'/')), en = l.endDate ? new Date(l.endDate.replace(/-/g,'/')) : new Date('9999/12/31');
         return s <= mEnd && en >= mStart;
-      });
-      return `<tr><td style="font-weight:700">${e.name}</td><td>${getTeamBadge(e.team,'font-size:10px;')}</td><td style="font-size:11px;color:var(--text2)">${e.empId||'-'}</td><td><span class="badge badge-orange" style="font-size:10px">${l?.type||'-'}</span></td><td style="${dateStyle(l?.startDate)}">${l?.startDate||'-'}</td><td style="${dateStyle(l?.endDate)}">${l?.endDate||'진행중'}</td></tr>`;
+      }).sort((a,b) => a.startDate.localeCompare(b.startDate));
+      return matches.map(l =>
+        `<tr><td style="font-weight:700">${e.name}</td><td>${getTeamBadge(e.team,'font-size:10px;')}</td><td style="font-size:11px;color:var(--text2)">${e.empId||'-'}</td><td><span class="badge badge-orange" style="font-size:10px">${l.type||'-'}</span></td><td style="${dateStyle(l.startDate)}">${l.startDate||'-'}</td><td style="${dateStyle(l.endDate)}">${l.endDate||'진행중'}</td></tr>`
+      ).join('');
     }).join('')}
     </tbody></table>` : emptyMsg;
 
