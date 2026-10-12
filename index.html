@@ -25,6 +25,24 @@
     --mono: 'JetBrains Mono', monospace;
     --shadow: 0 2px 12px rgba(30,41,59,.08);
     --shadow-md: 0 6px 28px rgba(30,41,59,.14);
+
+    /* ── 관리자평가(work-calendar에서 이식)가 참조하는 추가 변수.
+       --text/--accent/--border/--shadow 등은 이미 위에 있어 그대로 재사용하고,
+       거기 없는 것만 원래 이름 그대로 추가함(이식한 JS의 인라인 style이 그대로 동작하도록) ── */
+    --bg-card: var(--surface);
+    --bg-card-2: var(--surface2);
+    --border-strong: #d5d9e0;
+    --text-soft: var(--text2);
+    --text-faint: var(--text3);
+    --accent-soft: var(--accent-light);
+    --accent-dark: var(--accent-hover);
+    --danger-soft: #fdeeee;
+    --danger-text: #d63939;
+    --success-soft: #e8f6ed;
+    --success-text: #1f8a4c;
+    --radius-sm: 6px;
+    --radius: 8px;
+    --radius-lg: 12px;
 }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -584,6 +602,137 @@
   .issue-empty { font-size: 12px; color: var(--text3); padding: 12px 0; text-align: center; }
   .issue-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   @media(max-width:800px) { .issue-grid { grid-template-columns: 1fr; } }
+
+  /* ══════════════════════════════════════════════════════════════
+     관리자평가 (https://inorichann-go.github.io/work-calendar/ 에서 이식)
+     이 블록의 클래스는 관리자평가 탭/팝업에서만 쓰이고, 색상은 위 --*
+     변수로 분리되어 있어 기존 화면 스타일과 섞이지 않음
+  ══════════════════════════════════════════════════════════════ */
+  .empty-state { color: var(--text-faint); font-size: 12px; padding: 30px 0; text-align: center; }
+  .center-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; max-height: 360px; overflow: auto; }
+  .center-row { display: flex; align-items: center; gap: 8px; }
+  .center-row input {
+    border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+    padding: 8px 10px; font-size: 12px; font-family: inherit; background: var(--bg-card); color: var(--text);
+  }
+  .center-row input:focus { outline: none; border-color: var(--accent); }
+  .center-row button { border: none; background: none; color: var(--text-faint); cursor: pointer; font-size: 13px; padding: 4px 6px; }
+  .center-row button:hover { color: var(--danger); }
+
+  .duty-month-bar {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 10px 14px; margin-bottom: 14px;
+  }
+  .duty-month-label { font-size: 11.5px; font-weight: 700; color: var(--text); }
+  .duty-month-hint { font-size: 10.5px; color: var(--text-faint); flex-basis: 100%; }
+  .duty-lock-badge { font-size: 11px; font-weight: 700; color: var(--danger-text); background: var(--danger-soft); padding: 6px 10px; border-radius: 6px; }
+  .duty-search-input {
+    border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+    padding: 7px 12px; font-size: 11.5px; font-family: inherit; width: 180px; background: var(--bg-card); color: var(--text);
+  }
+  .duty-search-input:focus { outline: none; border-color: var(--accent); }
+  .duty-table-scroll { overflow: auto; max-height: 520px; border: 1px solid var(--border); border-radius: 8px; }
+  .duty-table { border-collapse: collapse; font-size: 10.5px; white-space: nowrap; }
+  .duty-table th, .duty-table td { border: 1px solid var(--border); padding: 4px 7px; text-align: center; }
+  .duty-table th { background: var(--bg-card-2); position: sticky; top: 0; z-index: 2; font-weight: 700; color: var(--text-soft); }
+  .eval-metric-upload { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+  .eval-metric-upload label.btn-secondary { display: inline-flex; align-items: center; }
+
+  .duty-report-view { max-width: 100%; }
+  .duty-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 12px; }
+  .duty-stat-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 16px 16px 20px;
+    text-align: center; position: relative; overflow: hidden;
+  }
+  .duty-stat-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--accent); }
+  .duty-stat-card.accent-blue::before { background: #4C6EF5; }
+  .duty-stat-card.accent-green::before { background: #27AE60; }
+  .duty-stat-card.accent-red::before { background: #EB5757; }
+  .duty-stat-card.accent-purple::before { background: #9B51E0; }
+  .duty-stat-number { font-size: 24px; font-weight: 800; color: var(--text); }
+  .duty-stat-label { font-size: 11px; color: var(--text-soft); font-weight: 600; margin-top: 4px; }
+  .duty-stat-delta { margin-top: 6px; }
+  .duty-prev-note { font-size: 11px; color: var(--accent-dark); background: var(--accent-soft); padding: 8px 12px; border-radius: 8px; margin-bottom: 14px; font-weight: 600; }
+  .duty-delta { font-size: 10.5px; font-weight: 800; padding: 2px 6px; border-radius: 5px; }
+  .duty-delta-up { color: var(--success-text); background: var(--success-soft); }
+  .duty-delta-down { color: var(--danger-text); background: var(--danger-soft); }
+  .duty-delta-flat { color: var(--text-faint); background: var(--bg-card-2); }
+  .eval-badge { display: inline-block; padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; margin-left: 4px; }
+  .eval-badge-blue { background: var(--accent-soft); color: var(--accent-dark); }
+  .eval-badge-red { background: var(--danger-soft); color: var(--danger-text); }
+  .eval-badge-gray { background: var(--bg-card-2); color: var(--text-soft); }
+  .eval-editable-cell { cursor: pointer; }
+  .eval-editable-cell:hover { background: var(--accent-soft); }
+  .eval-row-delete-btn { border: none; background: none; color: var(--text-faint); cursor: pointer; font-size: 12px; padding: 3px 6px; border-radius: 5px; }
+  .eval-row-delete-btn:hover { color: var(--danger-text); background: var(--danger-soft); }
+  .duty-report-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; }
+  .duty-report-section-title { font-size: 12px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+  .duty-report-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+  .duty-report-table th, .duty-report-table td { border: 1px solid var(--border); padding: 9px 12px; text-align: center; }
+  .duty-report-table th { background: var(--bg-card-2); font-weight: 700; color: var(--text-soft); }
+  .duty-report-table tbody tr:hover { background: var(--bg-card-2); }
+
+  .cal-nav { display: flex; align-items: center; gap: 10px; }
+  .cal-nav-btn {
+    width: 30px; height: 30px; border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--text-soft);
+    font-size: 14px; font-weight: 700;
+    transition: background .12s ease, border-color .12s ease;
+  }
+  .cal-nav-btn:hover { background: var(--bg-card-2); border-color: var(--border-strong); }
+  .cal-month-label { font-size: 14px; font-weight: 800; color: var(--text); min-width: 112px; text-align: center; }
+  .cal-month-label-clickable { cursor: pointer; border-radius: 8px; padding: 4px 8px; }
+  .cal-month-label-clickable:hover { background: var(--bg-card-2); }
+  .rev-month-picker {
+    position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: var(--shadow); padding: 12px; z-index: 40; width: 240px;
+  }
+  .rev-month-picker.hidden { display: none; }
+  .rmp-year-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 12px; font-weight: 800; color: var(--text); }
+  .rmp-year-nav .rmp-year-btn { width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-faint); font-weight: 700; }
+  .rmp-year-nav .rmp-year-btn:hover { background: var(--bg-card-2); color: var(--text); }
+  .rmp-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .rmp-grid.rmp-grid-narrow { grid-template-columns: repeat(3, 1fr); }
+  .rmp-cell { position: relative; padding: 8px 0; border-radius: 7px; text-align: center; font-size: 11.5px; font-weight: 700; color: var(--text-soft); cursor: pointer; border: 1px solid transparent; }
+  .rmp-cell:hover { background: var(--bg-card-2); }
+  .rmp-cell.current { border-color: var(--accent); color: var(--text); }
+  .rmp-cell.has-data::after { content: ""; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
+
+  .eval-modal-overlay {
+    position: fixed; inset: 0; background: rgba(41,40,36,0.42);
+    display: flex; align-items: center; justify-content: center; z-index: 200;
+  }
+  .eval-modal-overlay.hidden { display: none; }
+  .eval-modal {
+    background: var(--bg-card); border-radius: var(--radius-lg); width: 400px; max-width: 92vw;
+    max-height: 88vh; overflow: auto; box-shadow: var(--shadow); padding: 18px;
+  }
+  .eval-modal h2 { font-size: 14px; margin: 0 0 16px; font-weight: 700; color: var(--text); }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 11px; font-weight: 700; color: var(--text-soft); margin-bottom: 6px; }
+  .field input[type=text], .field input[type=date] {
+    width: 100%; border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+    padding: 7px 10px; font-size: 12.5px; font-family: inherit; color: var(--text); background: var(--bg-card);
+    height: 34px;
+  }
+  .field input:focus { outline: none; border-color: var(--accent); }
+  .modal-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; }
+  .btn-secondary {
+    background: var(--bg-card); border: 1px solid var(--border-strong); color: var(--text-soft);
+    padding: 9px 14px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+  .btn-secondary:hover { background: var(--bg-card-2); }
+  .btn-primary {
+    background: var(--accent); border: none; color: #fff;
+    padding: 9px 16px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 700; cursor: pointer;
+  }
+  .btn-primary:hover { background: var(--accent-dark); }
+  .btn-danger-text { background: none; border: none; color: var(--danger); font-size: 11.5px; font-weight: 600; cursor: pointer; padding: 6px 4px; }
 </style>
 </head>
 <body>
@@ -647,6 +796,7 @@
   <div class="tab" onclick="showTab(3)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> 연차관리</div>
   <div class="tab" onclick="showTab(4)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> 이달의 이슈</div>
   <div class="tab" onclick="showTab(5)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg> 실적</div>
+  <div class="tab" onclick="showTab(6)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4h9v3.6a4.5 4.5 0 0 1-9 0Z"/><path d="M5.7 6H4a1.8 1.8 0 0 0 1.7 3.6M18.3 6H20a1.8 1.8 0 0 1-1.7 3.6"/><path d="M12 11.6v3M9.3 20h5.4M10.4 17.2h3.2v2.8h-3.2Z"/></svg> 관리자평가</div>
 
 </div>
 
@@ -2003,6 +2153,11 @@
     <div style="font-size:12px;">곧 이 탭에서 실적 데이터를 확인하고 관리할 수 있게 됩니다.</div>
   </div>
 </div>
+
+<!-- ═══════════════════════════════ TAB 6: 관리자평가 (work-calendar에서 이식) ═══════════════════════════════ -->
+<div id="panel-eval" class="panel">
+  <div id="eval-view-container"></div>
+</div>
 </div><!-- panels-wrap -->
 
 
@@ -2206,6 +2361,76 @@
       <button class="btn" onclick="closeModal('cert-popup-modal')" style="padding:4px 10px;font-size:18px;line-height:1;">×</button>
     </div>
     <div id="cert-popup-content" style="padding:20px;"></div>
+  </div>
+</div>
+
+<!-- ═══ 관리자평가 팝업 (work-calendar에서 이식) ═══ -->
+<div class="eval-modal-overlay hidden" id="evalReducedHoursModalOverlay">
+  <div class="eval-modal" style="width:380px;">
+    <h2>👶 육아단축자 명단</h2>
+    <p style="font-size:11px;color:var(--text-soft);margin:-8px 0 12px;">여기 등록된 사람은 모든 주차에서 CPD·Call Time 실적이 자동으로 2배 보정돼요.</p>
+    <div id="evalReducedHoursModalBody"></div>
+    <div class="modal-actions" style="justify-content:flex-end;">
+      <button type="button" class="btn-secondary" onclick="closeEvalReducedHoursModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="eval-modal-overlay hidden" id="evalResignModalOverlay">
+  <div class="eval-modal" style="width:460px;">
+    <h2>🚪 퇴사자 명단 (이번 주차)</h2>
+    <p style="font-size:11px;color:var(--text-soft);margin:-8px 0 12px;">입사 2주 이하 퇴사자는 제외하고 넣어주세요.</p>
+    <div id="evalResignModalBody"></div>
+    <div class="modal-actions" style="justify-content:flex-end;">
+      <button type="button" class="btn-secondary" onclick="closeEvalResignModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="eval-modal-overlay hidden" id="evalCellEditModalOverlay">
+  <div class="eval-modal" style="width:360px;">
+    <h2 id="evalCellEditModalTitle">값 수정</h2>
+    <div class="field">
+      <label id="evalCellEditModalLabel">값</label>
+      <input type="text" id="evalCellEditModalInput">
+      <p id="evalCellEditModalHint" style="font-size:10.5px;color:var(--text-faint);margin-top:6px;"></p>
+    </div>
+    <div class="modal-actions" style="justify-content:flex-end;">
+      <button type="button" class="btn-secondary" onclick="closeEvalCellEditModal()">취소</button>
+      <button type="button" class="btn-primary" onclick="confirmEvalCellEditModal()">반영</button>
+    </div>
+  </div>
+</div>
+
+<div class="eval-modal-overlay hidden" id="evalUnder80ModalOverlay">
+  <div class="eval-modal" style="width:460px;">
+    <h2>⚠ 근무 80% 미만 근무자 (이번 주차)</h2>
+    <p style="font-size:11px;color:var(--text-soft);margin:-8px 0 12px;">등록된 사람은 CPD·Call Time 점수 계산에서 모두 제외돼요.</p>
+    <div id="evalUnder80ModalBody"></div>
+    <div class="modal-actions" style="justify-content:flex-end;">
+      <button type="button" class="btn-secondary" onclick="closeEvalUnder80Modal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="eval-modal-overlay hidden" id="evalCriteriaModalOverlay">
+  <div class="eval-modal" style="width:600px;max-height:85vh;">
+    <h2>📐 평가기준</h2>
+    <div id="evalCriteriaModalBody"></div>
+    <div class="modal-actions" style="justify-content:flex-end;">
+      <button type="button" class="btn-secondary" onclick="closeEvalCriteriaModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="eval-modal-overlay hidden" id="evalLockModalOverlay">
+  <div class="eval-modal" style="width:480px;">
+    <h2>🔒 관리자평가 마감 설정</h2>
+    <p style="font-size:11px;color:var(--text-soft);margin:-8px 0 14px;">마감(잠금)한 주차는 업로드·수정·삭제가 모두 막히고, 조회와 엑셀 다운로드만 가능해요.</p>
+    <div id="evalLockModalBody"></div>
+    <div class="modal-actions" style="justify-content:flex-end;">
+      <button type="button" class="btn-secondary" onclick="closeEvalLockModal()">닫기</button>
+    </div>
   </div>
 </div>
 
@@ -2669,6 +2894,8 @@ async function dbLoad() {
     else                    window.issueMemos = {};
     if (row.admin_pw_hash)  window._adminPwHash = row.admin_pw_hash;
     userAccounts = row.user_accounts ? row.user_accounts : loadAccountsLocal();
+    evalStore = row.eval_data || { weekly: {}, reducedHoursNames: [] };
+    if (typeof renderEvalRefresh === 'function') renderEvalRefresh();
     if (row.asset_data) {
       assetOverrides = row.asset_data.overrides || {};
       assetHistoryList = row.asset_data.history || [];
@@ -2739,6 +2966,7 @@ function showTab(i) {
   if (i===2) { initHireResignControls(); showSubTab('emplist'); }
   if (i===3) renderLeaveTable();
   if (i===4) { initIssueControls(); renderIssue(); }
+  if (i===6) renderEvalRefresh();
 }
 function showPersonalSubTab(name) {
   ['monthly','summary'].forEach(t => {
@@ -8622,6 +8850,1088 @@ async function init() {
   setTimeout(loadNotice, 300);
 }
 init();
+
+// ══════════════════════════════════════════════════════════════
+//  관리자평가 (https://inorichann-go.github.io/work-calendar/ 에서 이식)
+//  다른 탭과 완전히 독립적인 데이터(evalStore)로 동작. Supabase의
+//  eval_data 컬럼에 저장되며, 해당 컬럼이 없으면 저장은 실패해도
+//  (console에 에러만 남고) 화면 조작 자체는 정상 동작함.
+// ══════════════════════════════════════════════════════════════
+function escapeHtml(s){ return escHtml(s); }
+function numOrNull(v){
+  if(v===undefined||v===null||v==='') return null;
+  const n = Number(v);
+  return isNaN(n) ? null : n;
+}
+async function readWorkbookFromFile(file){
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, {type:'array', cellNF:true});
+  wb.SheetNames.forEach(name=>{
+    const ws = wb.Sheets[name];
+    Object.keys(ws).forEach(addr=>{
+      if(addr[0]==='!') return;
+      const cell = ws[addr];
+      if(cell.t!=='n' || !cell.z || !XLSX.SSF.is_date(cell.z)) return;
+      const dc = XLSX.SSF.parse_date_code(cell.v);
+      if(!dc) return;
+      cell.v = new Date(dc.y, dc.m-1, dc.d, dc.H, dc.M, Math.round(dc.S));
+      cell.t = 'd';
+    });
+  });
+  return wb;
+}
+function dutyMonthsBetween(startDate, endDate){
+  const s = (startDate instanceof Date) ? startDate : new Date(startDate);
+  const e = (endDate instanceof Date) ? endDate : new Date(endDate);
+  if(isNaN(s.getTime())||isNaN(e.getTime())) return 0;
+  let months = (e.getFullYear()-s.getFullYear())*12 + (e.getMonth()-s.getMonth());
+  if(e.getDate() < s.getDate()) months--;
+  return Math.max(0, months);
+}
+function dutyFmtDate(d){
+  if(!d) return '';
+  const dd = (d instanceof Date) ? d : new Date(d);
+  if(isNaN(dd.getTime())) return '';
+  return `${dd.getFullYear()}-${String(dd.getMonth()+1).padStart(2,'0')}-${String(dd.getDate()).padStart(2,'0')}`;
+}
+
+let evalStore = { weekly: {}, reducedHoursNames: [] };
+const EVAL_TEAMS = [
+  '제휴상담 1팀','제휴상담 2팀','제휴상담 3팀',
+  '장기사고 1팀','장기사고 2팀','장기사고 3팀','장기사고 4팀','장기사고 5팀','장기사고 6팀'
+];
+const EVAL_CRITERIA = {
+  cpdWeight: 30, cpdTarget: {'제휴상담':90, '장기사고':120},
+  top2Weight: 20, top2Target: 97,
+  npsWeight: 30, npsTarget: 88,
+  ctWeight: 20, ctTargetSeconds: 4.5*3600,
+  resignPenaltyPerPerson: -3,
+  scoreToIncentive: [
+    {min:100, amt:350000},{min:99, amt:320000},{min:98, amt:290000},{min:97, amt:260000},
+    {min:96, amt:230000},{min:95, amt:200000},{min:94, amt:170000},{min:93, amt:140000},
+    {min:92, amt:110000},{min:91, amt:80000},{min:90, amt:50000}
+  ],
+  outboundTiers: [
+    {key:'5', label:'5% 이상 (차감없음)', penalty:0},
+    {key:'4', label:'4%', penalty:-5},
+    {key:'3', label:'3%', penalty:-10},
+    {key:'below3', label:'3% 미만', penalty:-15}
+  ]
+};
+function evalTeamCategory(team){
+  if((team||'').startsWith('제휴상담')) return '제휴상담';
+  if((team||'').startsWith('장기사고')) return '장기사고';
+  return null;
+}
+function normalizeEvalTeamName(shortName){
+  if(!shortName) return null;
+  const s = String(shortName).trim();
+  let m = s.match(/^제휴(\d)팀$/);
+  if(m) return `제휴상담 ${m[1]}팀`;
+  m = s.match(/^사고(\d)팀$/);
+  if(m) return `장기사고 ${m[1]}팀`;
+  if(s==='실효OB') return null;
+  return null;
+}
+function evalDurationToSeconds(val){
+  if(val===null||val===undefined||val==='') return 0;
+  if(val instanceof Date){
+    const epoch = Date.UTC(1899,11,30);
+    return Math.max(0,(val.getTime()-epoch)/1000);
+  }
+  if(typeof val==='number') return val*86400;
+  return 0;
+}
+function evalExcelSerialToDate(serial){
+  if(typeof serial!=='number' || isNaN(serial)) return null;
+  return new Date(Date.UTC(1899,11,30) + Math.round(serial*86400000));
+}
+function evalOutboundPenalty(ratePercent){
+  if(ratePercent===null||ratePercent===undefined||isNaN(ratePercent)) return 0;
+  if(ratePercent>=5) return 0;
+  if(ratePercent>=4) return -5;
+  if(ratePercent>=3) return -10;
+  return -15;
+}
+function evalScoreToIncentive(total){
+  for(const t of EVAL_CRITERIA.scoreToIncentive){ if(total>=t.min) return t.amt; }
+  return 0;
+}
+function evalFmtSeconds(sec){
+  sec = Math.round(sec||0);
+  const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = sec%60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+function evalTenureEligible(hireDate, refDate){
+  const s = (hireDate instanceof Date) ? hireDate : new Date(hireDate);
+  const r = (refDate instanceof Date) ? refDate : new Date(refDate);
+  if(isNaN(s.getTime())||isNaN(r.getTime())) return false;
+  const anniv = new Date(s.getFullYear(), s.getMonth()+3, s.getDate());
+  const annivYM = anniv.getFullYear()*12 + anniv.getMonth();
+  const refYM = r.getFullYear()*12 + r.getMonth();
+  if(s.getDate()===1) return annivYM <= refYM;
+  return annivYM < refYM;
+}
+let evalSelectedWeek = '';
+function getEvalSelectedWeek(){
+  if(evalSelectedWeek && evalStore.weekly[evalSelectedWeek]) return evalSelectedWeek;
+  const keys = Object.keys(evalStore.weekly).sort();
+  if(keys.length) return keys[keys.length-1];
+  return dutyFmtDate(new Date());
+}
+let evalSaveTimer = null;
+function saveEvalData(){
+  clearTimeout(evalSaveTimer);
+  evalSaveTimer = setTimeout(()=>{ dbSaveEvalData(); }, 600);
+}
+async function dbSaveEvalData(){
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/attendance_data?id=eq.main', {
+      method: 'PATCH',
+      headers: { ...DB_HEADERS, 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ eval_data: evalStore, updated_at: new Date().toISOString() })
+    });
+    if (!res.ok) throw new Error(res.status);
+  } catch(err) {
+    console.error('관리자평가 저장 실패(Supabase에 eval_data 컬럼이 없을 수 있음):', err);
+  }
+}
+function renderEvalRefresh(){
+  const panel = document.getElementById('panel-eval');
+  const vc = document.getElementById('eval-view-container');
+  if(panel && vc && panel.classList.contains('active')) vc.innerHTML = renderEvalView();
+}
+
+/* ---- 종합콜현황 업로드 ---- */
+async function onEvalCallDataUpload(ev){
+  const file = ev.target.files[0]; if(!file) return;
+  try{
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, {type:'array'});
+    const sheetName = wb.SheetNames.find(n=>n.includes('종합현황')) || wb.SheetNames[0];
+    const ws = wb.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:null});
+
+    let refDate = null;
+    for(let r=0; r<Math.min(rows.length,10); r++){
+      const row = rows[r]||[];
+      for(let c=0; c<row.length; c++){
+        if(row[c] && String(row[c]).includes('실적기준일')){
+          for(let c2=c+1; c2<row.length; c2++){
+            if(typeof row[c2]==='number'){ refDate = evalExcelSerialToDate(row[c2]); break; }
+          }
+        }
+      }
+      if(refDate) break;
+    }
+    if(!refDate) refDate = new Date();
+    const dateKey = dutyFmtDate(refDate);
+    if(isEvalWeekLocked(dateKey)){
+      alert(`${dateKey} 주차는 마감(잠금)되어 있어서 다시 업로드할 수 없어요. 설정에서 잠금을 해제해주세요.`);
+      ev.target.value=''; return;
+    }
+
+    let cpdCol = -1;
+    for(let r=0; r<Math.min(rows.length,15) && cpdCol<0; r++){
+      const row = rows[r]||[];
+      for(let c=0; c<row.length; c++){
+        if(String(row[c]||'').trim()==='CPD'){ cpdCol = c; break; }
+      }
+    }
+    if(cpdCol<0){
+      alert('종합콜현황 파일에서 "CPD" 헤더를 찾지 못했어요. 파일 형식을 확인해주세요.');
+      ev.target.value=''; return;
+    }
+    const colName = cpdCol-7, colSabun = cpdCol-6, colTeam = cpdCol-5, colHire = cpdCol-4;
+    const colCpdIn = cpdCol, colCpdOb = cpdCol+1, colCpdTotal = cpdCol+3;
+    const colCtIn = cpdCol+4, colCtOut = cpdCol+5, colCtTotal = cpdCol+6;
+
+    const employees = [];
+    for(let r=0; r<rows.length; r++){
+      const row = rows[r]||[];
+      const nameRaw = row[colName], teamRaw = row[colTeam];
+      if(!nameRaw || !teamRaw) continue;
+      const teamNorm = normalizeEvalTeamName(teamRaw);
+      if(!teamNorm) continue;
+      const cpdTotal = numOrNull(row[colCpdTotal]);
+      if(cpdTotal===null) continue;
+      const hireRaw = row[colHire];
+      const hireDate = typeof hireRaw==='number' ? evalExcelSerialToDate(hireRaw) : (hireRaw||null);
+      employees.push({
+        name: String(nameRaw).trim(), team: teamNorm, hireDate,
+        cpdIn: numOrNull(row[colCpdIn])||0, cpdOb: numOrNull(row[colCpdOb])||0, cpdTotal: cpdTotal,
+        ctIn: (numOrNull(row[colCtIn])||0)*86400,
+        ctOut: (numOrNull(row[colCtOut])||0)*86400,
+        ctTotal: (numOrNull(row[colCtTotal])||0)*86400,
+        under80: false
+      });
+    }
+    if(employees.length===0){ alert('개인별 실적 데이터를 찾지 못했어요. 종합콜현황 파일 형식을 확인해주세요.'); ev.target.value=''; return; }
+    const prior = evalStore.weekly[dateKey];
+    let carriedReducedNames = [];
+    if(prior && prior.reducedHoursNames){
+      carriedReducedNames = prior.reducedHoursNames;
+    }else{
+      const priorKeys = Object.keys(evalStore.weekly).filter(k=>k<dateKey).sort();
+      if(priorKeys.length){
+        const latestPrior = evalStore.weekly[priorKeys[priorKeys.length-1]];
+        carriedReducedNames = (latestPrior && latestPrior.reducedHoursNames) || [];
+      }
+    }
+    let carriedResigned = [];
+    if(prior && prior.resigned){
+      carriedResigned = prior.resigned;
+    }else{
+      const priorKeys = Object.keys(evalStore.weekly).filter(k=>k<dateKey).sort();
+      if(priorKeys.length){
+        const latestPrior = evalStore.weekly[priorKeys[priorKeys.length-1]];
+        const sameMonth = latestPrior && latestPrior.dateKey && latestPrior.dateKey.slice(0,7)===dateKey.slice(0,7);
+        if(sameMonth) carriedResigned = (latestPrior.resigned || []);
+      }
+    }
+    let carriedUnder80 = [];
+    if(prior && prior.under80List){
+      carriedUnder80 = prior.under80List;
+    }else{
+      const priorKeys = Object.keys(evalStore.weekly).filter(k=>k<dateKey).sort();
+      if(priorKeys.length){
+        const latestPrior = evalStore.weekly[priorKeys[priorKeys.length-1]];
+        const sameMonth = latestPrior && latestPrior.dateKey && latestPrior.dateKey.slice(0,7)===dateKey.slice(0,7);
+        if(sameMonth) carriedUnder80 = (latestPrior.under80List || []);
+      }
+    }
+    evalStore.weekly[dateKey] = {
+      dateKey, sourceFileName: file.name, employees,
+      teamMetrics: (prior && prior.teamMetrics) || {},
+      resigned: carriedResigned.slice(),
+      under80List: carriedUnder80.slice(),
+      reducedHoursNames: carriedReducedNames.slice()
+    };
+    evalSelectedWeek = dateKey;
+    saveEvalData();
+    renderEvalRefresh();
+    alert(`${employees.length}명 실적 반영 완료 (기준일: ${dateKey})`);
+  }catch(err){
+    console.error(err);
+    alert('파일을 읽는 중 문제가 발생했어요. 종합콜현황 파일이 맞는지 확인해주세요.');
+  }
+  ev.target.value='';
+}
+/* ---- 기준일(주차) 선택: 화살표 이동 + 달력형 팝업 ---- */
+let evalWeekPickerYear = null;
+function evalWeekNav(delta){
+  const weekKeys = Object.keys(evalStore.weekly).sort();
+  const sel = getEvalSelectedWeek();
+  const idx = weekKeys.indexOf(sel);
+  if(idx===-1) return;
+  const newIdx = idx + delta;
+  if(newIdx<0 || newIdx>=weekKeys.length) return;
+  evalSelectedWeek = weekKeys[newIdx];
+  renderEvalRefresh();
+}
+function toggleEvalWeekPicker(ev){
+  if(ev) ev.stopPropagation();
+  const picker = document.getElementById('evalWeekPicker');
+  if(!picker) return;
+  const isHidden = picker.classList.contains('hidden');
+  if(isHidden){
+    const sel = getEvalSelectedWeek();
+    evalWeekPickerYear = sel ? Number(sel.slice(0,4)) : new Date().getFullYear();
+    renderEvalWeekPickerBody();
+    picker.classList.remove('hidden');
+  }else{
+    picker.classList.add('hidden');
+  }
+}
+function evalWeekPickerYearNav(delta){
+  evalWeekPickerYear += delta;
+  renderEvalWeekPickerBody();
+}
+function renderEvalWeekPickerBody(){
+  const picker = document.getElementById('evalWeekPicker');
+  if(!picker) return;
+  const sel = getEvalSelectedWeek();
+  const weekKeys = Object.keys(evalStore.weekly).sort();
+  const yearKeys = weekKeys.filter(k=>k.startsWith(String(evalWeekPickerYear)));
+  const cells = yearKeys.map(k=>{
+    const mmdd = k.slice(5);
+    const isCurrent = k===sel;
+    return `<div class="rmp-cell has-data ${isCurrent?'current':''}" onclick="selectEvalWeek('${k}')">${mmdd}</div>`;
+  }).join('') || `<div style="grid-column:1/-1;text-align:center;color:var(--text-faint);font-size:11px;padding:10px 0;">이 해엔 데이터가 없어요</div>`;
+  picker.innerHTML = `
+    <div class="rmp-year-nav">
+      <div class="rmp-year-btn" onclick="evalWeekPickerYearNav(-1)">‹</div>
+      <span>${evalWeekPickerYear}년</span>
+      <div class="rmp-year-btn" onclick="evalWeekPickerYearNav(1)">›</div>
+    </div>
+    <div class="rmp-grid rmp-grid-narrow">${cells}</div>
+  `;
+}
+function selectEvalWeek(key){
+  evalSelectedWeek = key;
+  renderEvalRefresh();
+}
+
+/* ---- 육아단축자 명단 ---- */
+function openEvalReducedHoursModal(){
+  const sel = getEvalSelectedWeek();
+  const week = evalStore.weekly[sel];
+  if(!week){ alert('먼저 종합콜현황 파일을 업로드해주세요.'); return; }
+  if(isEvalWeekLocked(sel)){ alert('마감(잠금)된 주차는 수정할 수 없어요.'); return; }
+  renderEvalReducedHoursModalBody();
+  document.getElementById('evalReducedHoursModalOverlay').classList.remove('hidden');
+}
+function closeEvalReducedHoursModal(){
+  document.getElementById('evalReducedHoursModalOverlay').classList.add('hidden');
+}
+function renderEvalReducedHoursModalBody(){
+  const body = document.getElementById('evalReducedHoursModalBody');
+  const week = evalStore.weekly[getEvalSelectedWeek()];
+  const names = (week && week.reducedHoursNames) || [];
+  const rows = names.map((n,idx)=>`<li class="center-row">
+    <span style="flex:1;font-size:12px;font-weight:600;">${escapeHtml(n)}</span>
+    <button type="button" class="btn-secondary" style="padding:5px 10px;font-size:11px;" onclick="removeEvalReducedHoursName(${idx})">삭제</button>
+  </li>`).join('') || '<li class="empty-state" style="padding:10px 0;">등록된 육아단축자가 없어요.</li>';
+  body.innerHTML = `
+    <ul class="center-list" style="margin-bottom:12px;max-height:400px;">${rows}</ul>
+    <div style="display:flex;gap:6px;">
+      <input type="text" id="evalReducedHoursNameInput" placeholder="이름 입력 후 Enter" style="flex:1;border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;font-family:inherit;" onkeydown="if(event.key==='Enter'){event.preventDefault();addEvalReducedHoursName();}">
+      <button type="button" class="btn-primary" onclick="addEvalReducedHoursName()">추가</button>
+    </div>
+  `;
+  const inp = document.getElementById('evalReducedHoursNameInput');
+  if(inp) inp.focus();
+}
+function addEvalReducedHoursName(){
+  const input = document.getElementById('evalReducedHoursNameInput');
+  const name = input.value.trim();
+  if(!name) return;
+  const week = evalStore.weekly[getEvalSelectedWeek()];
+  if(!week) return;
+  week.reducedHoursNames = week.reducedHoursNames || [];
+  if(!week.reducedHoursNames.includes(name)) week.reducedHoursNames.push(name);
+  input.value='';
+  saveEvalData();
+  renderEvalReducedHoursModalBody();
+  renderEvalRefresh();
+}
+function removeEvalReducedHoursName(idx){
+  const week = evalStore.weekly[getEvalSelectedWeek()];
+  if(!week) return;
+  week.reducedHoursNames.splice(idx,1);
+  saveEvalData();
+  renderEvalReducedHoursModalBody();
+  renderEvalRefresh();
+}
+document.getElementById('evalReducedHoursModalOverlay').addEventListener('click',(e)=>{
+  if(e.target.id==='evalReducedHoursModalOverlay') closeEvalReducedHoursModal();
+});
+
+/* ---- 근무 80% 미만 근무자 명단 ---- */
+function isEvalUnder80(week, name, team){
+  return (week.under80List||[]).some(u=>u.name===name && u.team===team);
+}
+function openEvalUnder80Modal(){
+  const sel = getEvalSelectedWeek();
+  const week = evalStore.weekly[sel];
+  if(!week){ alert('먼저 종합콜현황 파일을 업로드해주세요.'); return; }
+  if(isEvalWeekLocked(sel)){ alert('마감(잠금)된 주차는 수정할 수 없어요.'); return; }
+  renderEvalUnder80ModalBody();
+  document.getElementById('evalUnder80ModalOverlay').classList.remove('hidden');
+}
+function closeEvalUnder80Modal(){
+  document.getElementById('evalUnder80ModalOverlay').classList.add('hidden');
+}
+function renderEvalUnder80ModalBody(){
+  const week = evalStore.weekly[getEvalSelectedWeek()];
+  const list = (week && week.under80List) || [];
+  const teamOpts = EVAL_TEAMS.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+  const rows = list.map((r,idx)=>`<li class="center-row">
+    <span style="flex:1;font-size:12px;">${escapeHtml(r.name)} · ${escapeHtml(r.team)}</span>
+    <button type="button" class="btn-secondary" style="padding:5px 10px;font-size:11px;" onclick="removeEvalUnder80(${idx})">삭제</button>
+  </li>`).join('') || '<li class="empty-state" style="padding:10px 0;">등록된 사람이 없어요.</li>';
+  document.getElementById('evalUnder80ModalBody').innerHTML = `
+    <ul class="center-list" style="margin-bottom:12px;max-height:400px;">${rows}</ul>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <input type="text" id="evalUnder80NameInput" placeholder="이름" style="flex:1;min-width:100px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;font-family:inherit;" onkeydown="if(event.key==='Enter'){event.preventDefault();addEvalUnder80();}">
+      <select id="evalUnder80TeamInput" style="border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;font-family:inherit;">${teamOpts}</select>
+      <button type="button" class="btn-primary" onclick="addEvalUnder80()">추가</button>
+    </div>
+  `;
+  const inp80 = document.getElementById('evalUnder80NameInput');
+  if(inp80) inp80.focus();
+}
+function addEvalUnder80(){
+  const name = document.getElementById('evalUnder80NameInput').value.trim();
+  const team = document.getElementById('evalUnder80TeamInput').value;
+  if(!name){ alert('이름을 입력해주세요.'); return; }
+  const week = evalStore.weekly[getEvalSelectedWeek()];
+  week.under80List = week.under80List || [];
+  if(week.under80List.some(u=>u.name===name && u.team===team)){ alert('이미 등록되어 있어요.'); return; }
+  week.under80List.push({name, team});
+  saveEvalData();
+  renderEvalUnder80ModalBody();
+  renderEvalRefresh();
+}
+function removeEvalUnder80(idx){
+  const week = evalStore.weekly[getEvalSelectedWeek()];
+  week.under80List.splice(idx,1);
+  saveEvalData();
+  renderEvalUnder80ModalBody();
+  renderEvalRefresh();
+}
+document.getElementById('evalUnder80ModalOverlay').addEventListener('click',(e)=>{
+  if(e.target.id==='evalUnder80ModalOverlay') closeEvalUnder80Modal();
+});
+
+/* ---- 팀별 지표(TOP2/NPS/발신율/민원건수) 입력 ---- */
+function updateEvalTeamMetric(team, field, value){
+  const sel = getEvalSelectedWeek();
+  const week = evalStore.weekly[sel];
+  if(!week) return;
+  if(isEvalWeekLocked(sel)){ alert('마감(잠금)된 주차는 수정할 수 없어요.'); renderEvalRefresh(); return; }
+  week.teamMetrics = week.teamMetrics || {};
+  week.teamMetrics[team] = week.teamMetrics[team] || {};
+  const n = value===''? null : Number(value);
+  week.teamMetrics[team][field] = (n===null||isNaN(n)) ? null : n;
+  saveEvalData();
+}
+
+/* ---- 퇴사자 명단 ---- */
+function openEvalResignModal(){
+  const sel = getEvalSelectedWeek();
+  const week = evalStore.weekly[sel];
+  if(!week){ alert('먼저 종합콜현황 파일을 업로드해주세요.'); return; }
+  if(isEvalWeekLocked(sel)){ alert('마감(잠금)된 주차는 수정할 수 없어요.'); return; }
+  renderEvalResignModalBody();
+  document.getElementById('evalResignModalOverlay').classList.remove('hidden');
+}
+function closeEvalResignModal(){
+  document.getElementById('evalResignModalOverlay').classList.add('hidden');
+}
+function renderEvalResignModalBody(){
+  const week = evalStore.weekly[getEvalSelectedWeek()];
+  const list = (week && week.resigned) || [];
+  const teamOpts = EVAL_TEAMS.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+  const rows = list.map((r,idx)=>`<li class="center-row">
+    <span style="flex:1;font-size:12px;">${escapeHtml(r.name)} · ${escapeHtml(r.team)} · ${escapeHtml(r.date||'')}</span>
+    <button type="button" class="btn-secondary" style="padding:5px 10px;font-size:11px;" onclick="removeEvalResign(${idx})">삭제</button>
+  </li>`).join('') || '<li class="empty-state" style="padding:10px 0;">등록된 퇴사자가 없어요.</li>';
+  document.getElementById('evalResignModalBody').innerHTML = `
+    <ul class="center-list" style="margin-bottom:12px;max-height:400px;">${rows}</ul>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <input type="text" id="evalResignNameInput" placeholder="이름" style="flex:1;min-width:100px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;font-family:inherit;" onkeydown="if(event.key==='Enter'){event.preventDefault();addEvalResign();}">
+      <select id="evalResignTeamInput" style="border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;font-family:inherit;">${teamOpts}</select>
+      <input type="date" id="evalResignDateInput" style="border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;font-family:inherit;" onkeydown="if(event.key==='Enter'){event.preventDefault();addEvalResign();}">
+      <button type="button" class="btn-primary" onclick="addEvalResign()">추가</button>
+    </div>
+  `;
+  const inpResign = document.getElementById('evalResignNameInput');
+  if(inpResign) inpResign.focus();
+}
+function addEvalResign(){
+  const name = document.getElementById('evalResignNameInput').value.trim();
+  const team = document.getElementById('evalResignTeamInput').value;
+  const date = document.getElementById('evalResignDateInput').value;
+  if(!name){ alert('이름을 입력해주세요.'); return; }
+  const week = evalStore.weekly[getEvalSelectedWeek()];
+  week.resigned = week.resigned || [];
+  week.resigned.push({name, team, date});
+  saveEvalData();
+  renderEvalResignModalBody();
+  renderEvalRefresh();
+}
+function removeEvalResign(idx){
+  const week = evalStore.weekly[getEvalSelectedWeek()];
+  week.resigned.splice(idx,1);
+  saveEvalData();
+  renderEvalResignModalBody();
+  renderEvalRefresh();
+}
+document.getElementById('evalResignModalOverlay').addEventListener('click',(e)=>{
+  if(e.target.id==='evalResignModalOverlay') closeEvalResignModal();
+});
+
+/* ---- 평가기준 보기 ---- */
+function openEvalCriteriaModal(){
+  const body = document.getElementById('evalCriteriaModalBody');
+  const incentiveRows = EVAL_CRITERIA.scoreToIncentive.map(t=>`<tr><td>${t.min}점 이상</td><td>${t.amt.toLocaleString()}원</td></tr>`).join('');
+  body.innerHTML = `
+    <table class="duty-report-table" style="margin-bottom:16px;">
+      <thead><tr><th>구분</th><th>배점</th><th>기준실적</th></tr></thead>
+      <tbody>
+        <tr><td style="text-align:left;">CPD (제휴상담)</td><td>${EVAL_CRITERIA.cpdWeight}점</td><td>${EVAL_CRITERIA.cpdTarget['제휴상담']}</td></tr>
+        <tr><td style="text-align:left;">CPD (장기사고)</td><td>${EVAL_CRITERIA.cpdWeight}점</td><td>${EVAL_CRITERIA.cpdTarget['장기사고']}</td></tr>
+        <tr><td style="text-align:left;">TOP2</td><td>${EVAL_CRITERIA.top2Weight}점</td><td>${EVAL_CRITERIA.top2Target}%</td></tr>
+        <tr><td style="text-align:left;">NPS</td><td>${EVAL_CRITERIA.npsWeight}점</td><td>${EVAL_CRITERIA.npsTarget}</td></tr>
+        <tr><td style="text-align:left;">Call Time</td><td>${EVAL_CRITERIA.ctWeight}점</td><td>${evalFmtSeconds(EVAL_CRITERIA.ctTargetSeconds)}</td></tr>
+        <tr><td style="text-align:left;">민원차감</td><td colspan="2">1건당 -1점</td></tr>
+        <tr><td style="text-align:left;">퇴직인원</td><td colspan="2">1명당 ${EVAL_CRITERIA.resignPenaltyPerPerson}점</td></tr>
+      </tbody>
+    </table>
+    <div style="font-size:11.5px;font-weight:700;margin-bottom:8px;">발신율 페널티 (TOP2는 절반, NPS는 전액 반영)</div>
+    <table class="duty-report-table" style="margin-bottom:16px;">
+      <thead><tr><th>발신율</th><th>차감점수</th></tr></thead>
+      <tbody>${EVAL_CRITERIA.outboundTiers.map(t=>`<tr><td>${escapeHtml(t.label)}</td><td>${t.penalty}점</td></tr>`).join('')}</tbody>
+    </table>
+    <div style="font-size:11.5px;font-weight:700;margin-bottom:8px;">총점 → 인센티브</div>
+    <table class="duty-report-table"><thead><tr><th>총점</th><th>인센티브</th></tr></thead><tbody>${incentiveRows}</tbody></table>
+  `;
+  document.getElementById('evalCriteriaModalOverlay').classList.remove('hidden');
+}
+function closeEvalCriteriaModal(){
+  document.getElementById('evalCriteriaModalOverlay').classList.add('hidden');
+}
+document.getElementById('evalCriteriaModalOverlay').addEventListener('click',(e)=>{
+  if(e.target.id==='evalCriteriaModalOverlay') closeEvalCriteriaModal();
+});
+
+/* ---- 점수 계산 ---- */
+function evalDeltaHtml(diff, opts){
+  opts = opts || {};
+  const suffix = opts.suffix || '';
+  const invertColor = !!opts.invert;
+  if(Math.abs(diff)<0.05 || !isFinite(diff)) return `<span class="duty-delta duty-delta-flat">± 0${suffix}</span>`;
+  const isUp = diff>0;
+  const goodColor = invertColor ? !isUp : isUp;
+  const cls = goodColor ? 'duty-delta-up' : 'duty-delta-down';
+  const arrow = isUp ? '▲' : '▼';
+  const valStr = Math.abs(diff).toFixed(1);
+  return `<span class="duty-delta ${cls}">${arrow} ${valStr}${suffix}</span>`;
+}
+function evalDeltaTimeHtml(diffSeconds, opts){
+  opts = opts || {};
+  const invertColor = !!opts.invert;
+  if(Math.abs(diffSeconds)<0.5 || !isFinite(diffSeconds)) return `<span class="duty-delta duty-delta-flat">± 00:00:00</span>`;
+  const isUp = diffSeconds>0;
+  const goodColor = invertColor ? !isUp : isUp;
+  const cls = goodColor ? 'duty-delta-up' : 'duty-delta-down';
+  const arrow = isUp ? '▲' : '▼';
+  const valStr = evalFmtSeconds(Math.abs(diffSeconds));
+  return `<span class="duty-delta ${cls}">${arrow} ${valStr}</span>`;
+}
+function computeEvalSummary(dateKey){
+  const week = evalStore.weekly[dateKey];
+  if(!week) return [];
+  const reducedNames = week.reducedHoursNames || [];
+  const evalRefDate = new Date(week.dateKey);
+  const withTenure = week.employees.map(e=>({
+    ...e,
+    months: dutyMonthsBetween(e.hireDate, evalRefDate),
+    isReduced: reducedNames.includes(e.name)
+  }));
+  const eligible = withTenure.filter(e=> evalTenureEligible(e.hireDate, evalRefDate));
+  const results = EVAL_TEAMS.map(team=>{
+    const teamList = eligible.filter(e=>e.team===team);
+    const cpdList = teamList.filter(e=>!isEvalUnder80(week, e.name, e.team));
+    const cpdVals = cpdList.map(e=> e.isReduced ? e.cpdTotal*2 : e.cpdTotal).filter(v=>v>0);
+    const cpdAvg = cpdVals.length ? cpdVals.reduce((a,b)=>a+b,0)/cpdVals.length : 0;
+    const cat = evalTeamCategory(team);
+    const cpdTarget = EVAL_CRITERIA.cpdTarget[cat] || 90;
+    const cpdScore = Math.min(EVAL_CRITERIA.cpdWeight, cpdAvg/cpdTarget*EVAL_CRITERIA.cpdWeight);
+
+    const ctVals = cpdList.map(e=> e.isReduced ? e.ctTotal*2 : e.ctTotal).filter(v=>v>0);
+    const ctAvg = ctVals.length ? ctVals.reduce((a,b)=>a+b,0)/ctVals.length : 0;
+    const ctScore = Math.min(EVAL_CRITERIA.ctWeight, ctAvg/EVAL_CRITERIA.ctTargetSeconds*EVAL_CRITERIA.ctWeight);
+
+    const tm = (week.teamMetrics && week.teamMetrics[team]) || {};
+    const top2 = tm.top2!=null ? tm.top2 : 0;
+    const nps = tm.nps!=null ? tm.nps : 0;
+    const complaints = tm.complaints!=null ? tm.complaints : 0;
+    const outboundRate = tm.outboundRate;
+    const outboundPenalty = evalOutboundPenalty(outboundRate);
+
+    let top2Score = Math.min(EVAL_CRITERIA.top2Weight, top2/EVAL_CRITERIA.top2Target*EVAL_CRITERIA.top2Weight) + outboundPenalty/2;
+    if(top2Score<0) top2Score=0;
+    let npsScore = Math.min(EVAL_CRITERIA.npsWeight, nps/EVAL_CRITERIA.npsTarget*EVAL_CRITERIA.npsWeight) + outboundPenalty;
+    if(npsScore<0) npsScore=0;
+
+    const complaintPenalty = -complaints;
+    const resignCount = (week.resigned||[]).filter(r=>r.team===team).length;
+    const resignPenalty = resignCount * EVAL_CRITERIA.resignPenaltyPerPerson;
+
+    const total = cpdScore+top2Score+npsScore+ctScore+resignPenalty+complaintPenalty;
+    const incentive = evalScoreToIncentive(total);
+    return { team, headcount:teamList.length, cpdAvg,cpdScore, top2,top2Score, nps,npsScore, ctAvg,ctScore,
+      complaints, complaintPenalty, resignCount, resignPenalty, outboundRate: outboundRate!=null?outboundRate:'', outboundPenalty, total, incentive };
+  });
+  return results;
+}
+
+/* ---- 렌더링 ---- */
+function renderEvalView(){
+  const weekKeys = Object.keys(evalStore.weekly).sort();
+  const sel = getEvalSelectedWeek();
+  const week = evalStore.weekly[sel];
+  const locked = week ? isEvalWeekLocked(sel) : false;
+  let html = `<div class="duty-report-view">
+    <div class="duty-month-bar">
+      <span class="duty-month-label">📅 기준일(주차)</span>
+      <div class="cal-nav">
+        <div class="cal-nav-btn" id="evalWeekPrev" onclick="evalWeekNav(-1)">‹</div>
+        <div class="cal-month-label-wrap" style="position:relative;">
+          <div class="cal-month-label cal-month-label-clickable" id="evalWeekLabel" onclick="toggleEvalWeekPicker(event)">${sel || '데이터 없음'}</div>
+          <div class="rev-month-picker hidden" id="evalWeekPicker"></div>
+        </div>
+        <div class="cal-nav-btn" id="evalWeekNext" onclick="evalWeekNav(1)">›</div>
+      </div>
+      <button class="btn-secondary" onclick="document.getElementById('evalCallDataInput').click()">📤 종합콜현황 업로드</button>
+      <input type="file" id="evalCallDataInput" accept=".xlsx,.xls" style="display:none;" onchange="onEvalCallDataUpload(event)">
+      <button class="btn-secondary" onclick="openEvalCriteriaModal()">📐 평가기준 보기</button>
+      ${week?`<button class="btn-danger-text" onclick="deleteEvalWeek()" ${locked?'disabled':''}>🗑️ 이 주차 삭제</button>`:''}
+      ${locked?`<span class="duty-lock-badge">🔒 마감(잠금)됨 — 조회·다운로드만 가능</span>`:''}
+      ${week?`<button class="btn-primary" style="margin-left:auto;" onclick="generateEvalExcel()">📥 결과 엑셀 다운로드</button>`:''}
+      <span class="duty-month-hint">이 탭은 다른 탭들과 완전히 독립적으로 동작해요. 매주 종합콜현황 파일을 새로 업로드하면 그 기준일로 자동 저장돼요.</span>
+    </div>`;
+  if(!week){
+    html += `<div class="empty-state" style="padding:60px 0;">종합콜현황 파일을 업로드하면 시작할 수 있어요.</div></div>`;
+    return html;
+  }
+  html += renderEvalSummaryDashboard(sel);
+  html += renderEvalTeamMetricInputs(week, locked);
+  html += renderEvalEmployeeTable(week, locked);
+  html += `</div>`;
+  return html;
+}
+function deleteEvalWeek(){
+  const sel = getEvalSelectedWeek();
+  if(!evalStore.weekly[sel]) return;
+  if(isEvalWeekLocked(sel)){ alert('마감(잠금)된 주차는 삭제할 수 없어요. 설정에서 잠금을 해제해주세요.'); return; }
+  if(!confirm(`${sel} 주차 데이터를 삭제할까요?\n이 작업은 되돌릴 수 없어요.`)) return;
+  delete evalStore.weekly[sel];
+  evalSelectedWeek = '';
+  saveEvalData();
+  renderEvalRefresh();
+}
+/* ---- 관리자평가 마감(잠금) ---- */
+function isEvalWeekLocked(dateKey){
+  return (evalStore.lockedWeeks||[]).includes(dateKey);
+}
+function setEvalWeekLocked(dateKey, locked){
+  evalStore.lockedWeeks = evalStore.lockedWeeks || [];
+  if(locked){ if(!evalStore.lockedWeeks.includes(dateKey)) evalStore.lockedWeeks.push(dateKey); }
+  else{ evalStore.lockedWeeks = evalStore.lockedWeeks.filter(k=>k!==dateKey); }
+  saveEvalData();
+}
+function toggleEvalWeekLockFromModal(dateKey){
+  setEvalWeekLocked(dateKey, !isEvalWeekLocked(dateKey));
+  renderEvalLockModalBody();
+  renderEvalRefresh();
+}
+function openEvalLockModal(){
+  renderEvalLockModalBody();
+  document.getElementById('evalLockModalOverlay').classList.remove('hidden');
+}
+function closeEvalLockModal(){
+  document.getElementById('evalLockModalOverlay').classList.add('hidden');
+}
+function renderEvalLockModalBody(){
+  const weekKeys = Object.keys(evalStore.weekly||{}).sort();
+  const locked = evalStore.lockedWeeks || [];
+  const body = document.getElementById('evalLockModalBody');
+  const rows = weekKeys.map(k=>{
+    const isLocked = locked.includes(k);
+    return `<li class="center-row">
+      <span style="flex:1;font-size:12px;font-weight:600;">${escapeHtml(k)}</span>
+      <span style="font-size:10.5px;font-weight:700;margin-right:8px;color:${isLocked?'#D64545':'#1F8A4C'};">${isLocked?'🔒 마감됨':'🔓 해제됨'}</span>
+      <button type="button" class="btn-secondary" style="padding:6px 10px;font-size:11px;" onclick="toggleEvalWeekLockFromModal('${k}')">${isLocked?'잠금 해제':'마감(잠금)'}</button>
+    </li>`;
+  }).join('') || '<li class="empty-state" style="padding:10px 0;">저장된 관리자평가 데이터가 없어요.</li>';
+  body.innerHTML = `<ul class="center-list" style="margin-bottom:0;">${rows}</ul>`;
+}
+document.getElementById('evalLockModalOverlay').addEventListener('click', (e)=>{
+  if(e.target.id==='evalLockModalOverlay') closeEvalLockModal();
+});
+/* ---- 팀별 지표 파일 업로드 ---- */
+function evalTeamKey(name){ return String(name||'').replace(/\s+/g,''); }
+function evalMatchTeam(cellText){
+  const t = evalTeamKey(cellText);
+  if(!t) return null;
+  return EVAL_TEAMS.find(team=>{
+    const k = evalTeamKey(team);
+    const i = t.indexOf(k);
+    return i>=0 && !/\d/.test(t.charAt(i+k.length));
+  }) || null;
+}
+function evalPercentValue(cell, assumeFraction){
+  if(!cell || cell.v===null || cell.v===undefined || cell.v==='') return null;
+  if(typeof cell.v==='string'){
+    const n = Number(cell.v.replace(/[%,\s]/g,''));
+    return isNaN(n) ? null : n;
+  }
+  if(typeof cell.v!=='number') return null;
+  const isPct = (cell.z && String(cell.z).includes('%')) || (cell.w && String(cell.w).includes('%'));
+  const v = (isPct || (assumeFraction && Math.abs(cell.v)<=1)) ? cell.v*100 : cell.v;
+  return Math.round(v*100)/100;
+}
+function evalSheetCell(ws, r, c){ return ws[XLSX.utils.encode_cell({r, c})]; }
+async function onEvalMetricFileUpload(ev, kind){
+  const file = ev.target.files[0]; if(!file) return;
+  ev.target.value = '';
+  const sel = getEvalSelectedWeek();
+  const week = evalStore.weekly[sel];
+  if(!week){ alert('먼저 종합콜현황 파일을 업로드해주세요.'); return; }
+  if(isEvalWeekLocked(sel)){ alert('마감(잠금)된 주차는 수정할 수 없어요.'); return; }
+  try{
+    const wb = await readWorkbookFromFile(file);
+    const found = {};
+    let usedSheet = '';
+    const sheetNames = kind==='csat' ? wb.SheetNames : [
+      ...wb.SheetNames.filter(n=>n.includes('평가기준')).reverse(),
+      ...wb.SheetNames.filter(n=>!n.includes('평가기준'))
+    ];
+    sheetNames.forEach(name=>{
+      if(kind!=='csat' && Object.keys(found).length) return;
+      const ws = wb.Sheets[name];
+      if(!ws['!ref']) return;
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      for(let r=range.s.r; r<=range.e.r; r++){
+        if(kind==='csat'){
+          const d = evalSheetCell(ws, r, 3);
+          if(!d || String(d.v).replace(/\s/g,'')!=='소계') continue;
+          const team = evalMatchTeam((evalSheetCell(ws, r, 1)||{}).v);
+          if(!team || found[team]) continue;
+          found[team] = { top2: evalPercentValue(evalSheetCell(ws, r, 17), true), nps: evalPercentValue(evalSheetCell(ws, r, 19), false) };
+          usedSheet = usedSheet || name;
+        }else{
+          const team = evalMatchTeam((evalSheetCell(ws, r, 2)||{}).v);
+          if(!team || found[team]) continue;
+          const v = evalPercentValue(evalSheetCell(ws, r, 10), false);
+          if(v===null) continue;
+          found[team] = { outboundRate: v };
+          usedSheet = name;
+        }
+      }
+    });
+    const teams = EVAL_TEAMS.filter(t=>found[t]);
+    if(!teams.length){
+      alert(kind==='csat'
+        ? '파일에서 팀 소계 행을 찾지 못했어요. (B열 팀이름, D열 "소계", R열 TOP2, T열 NPS)'
+        : '파일에서 팀 이름을 찾지 못했어요. (C열 팀이름, K열 실적)');
+      return;
+    }
+    week.teamMetrics = week.teamMetrics || {};
+    const lines = teams.map(team=>{
+      const m = week.teamMetrics[team] = week.teamMetrics[team] || {};
+      const f = found[team];
+      Object.keys(f).forEach(k=>{ if(f[k]!==null) m[k] = f[k]; });
+      return kind==='csat' ? `· ${team}: TOP2 ${f.top2??'-'}% / NPS ${f.nps??'-'}` : `· ${team}: 발신율 ${f.outboundRate}%`;
+    });
+    const missing = EVAL_TEAMS.filter(t=>!found[t]);
+    saveEvalData();
+    renderEvalRefresh();
+    alert(`${kind==='csat'?'TOP2·NPS':'발신율'} ${teams.length}개 팀 반영 완료 ("${usedSheet}" 시트)\n\n${lines.join('\n')}${missing.length?`\n\n파일에 없어서 그대로 둔 팀: ${missing.join(', ')}`:''}`);
+  }catch(err){
+    console.error(err);
+    alert('파일을 읽는 중 문제가 발생했어요.');
+  }
+}
+function evalMetricInputId(team, field){
+  return `evalMetric_${team.replace(/\s+/g,'_')}_${field}`;
+}
+function onEvalMetricKeydown(ev, team, field){
+  if(ev.key!=='Enter') return;
+  ev.preventDefault();
+  updateEvalTeamMetric(team, field, ev.target.value);
+  const idx = EVAL_TEAMS.indexOf(team);
+  if(idx>=0 && idx<EVAL_TEAMS.length-1){
+    const nextEl = document.getElementById(evalMetricInputId(EVAL_TEAMS[idx+1], field));
+    if(nextEl){ nextEl.focus(); if(nextEl.select) nextEl.select(); }
+  }
+}
+function renderEvalTeamMetricInputs(week, locked){
+  const tm = week.teamMetrics || {};
+  const dis = locked ? 'disabled' : '';
+  const rows = EVAL_TEAMS.map(team=>{
+    const m = tm[team] || {};
+    return `<tr>
+      <td style="text-align:left;font-weight:600;white-space:nowrap;">${escapeHtml(team)}</td>
+      <td><input type="number" step="0.01" id="${evalMetricInputId(team,'top2')}" value="${m.top2!=null?m.top2:''}" style="width:70px;" placeholder="예: 97" onchange="updateEvalTeamMetric('${team}','top2',this.value)" onkeydown="onEvalMetricKeydown(event,'${team}','top2')" ${dis}></td>
+      <td><input type="number" step="0.01" id="${evalMetricInputId(team,'nps')}" value="${m.nps!=null?m.nps:''}" style="width:70px;" onchange="updateEvalTeamMetric('${team}','nps',this.value)" onkeydown="onEvalMetricKeydown(event,'${team}','nps')" ${dis}></td>
+      <td><input type="number" step="0.1" id="${evalMetricInputId(team,'outboundRate')}" value="${m.outboundRate!=null?m.outboundRate:''}" style="width:70px;" placeholder="예: 4.5" onchange="updateEvalTeamMetric('${team}','outboundRate',this.value)" onkeydown="onEvalMetricKeydown(event,'${team}','outboundRate')" ${dis}></td>
+      <td><input type="number" id="${evalMetricInputId(team,'complaints')}" value="${m.complaints!=null?m.complaints:0}" style="width:60px;" onchange="updateEvalTeamMetric('${team}','complaints',this.value)" onkeydown="onEvalMetricKeydown(event,'${team}','complaints')" ${dis}></td>
+    </tr>`;
+  }).join('');
+  return `<div class="duty-report-section">
+    <div class="duty-report-section-title">✏️ 팀별 지표 입력 (TOP2 · NPS · 발신율 · 민원건수) · 값 입력 후 Enter 누르면 다음 팀으로 이동</div>
+    ${locked ? '' : `<div class="eval-metric-upload">
+      <label class="btn-secondary">📤 고객만족도(상담사별) 업로드 → TOP2·NPS<input type="file" accept=".xlsx,.xls" hidden onchange="onEvalMetricFileUpload(event,'csat')"></label>
+      <label class="btn-secondary">📤 관리자만족도 업로드 → 발신율<input type="file" accept=".xlsx,.xls" hidden onchange="onEvalMetricFileUpload(event,'outbound')"></label>
+      <span class="duty-month-hint" style="flex-basis:auto;">업로드하면 아래 칸이 자동으로 채워지고, 직접 고칠 수도 있어요. 민원건수는 직접 입력해주세요.</span>
+    </div>`}
+    <div style="overflow-x:auto;">
+      <table class="duty-report-table">
+        <thead><tr><th>팀</th><th>TOP2 (%)</th><th>NPS</th><th>발신율 (%)</th><th>민원건수</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+function getEvalPrevWeekKey(dateKey){
+  const priorKeys = Object.keys(evalStore.weekly||{}).filter(k=>k<dateKey).sort();
+  return priorKeys.length ? priorKeys[priorKeys.length-1] : null;
+}
+function renderEvalSummaryDashboard(dateKey){
+  const results = computeEvalSummary(dateKey);
+  const totalIncentive = results.reduce((a,r)=>a+r.incentive,0);
+  const prevKey = getEvalPrevWeekKey(dateKey);
+  const prevResults = prevKey ? computeEvalSummary(prevKey) : null;
+  const prevByTeam = {};
+  if(prevResults) prevResults.forEach(r=>{ prevByTeam[r.team] = r; });
+  const gap = (cur, prevVal) => (prevResults ? `<br>${evalDeltaHtml(cur-prevVal)}` : '');
+  const rows = results.map(r=>{
+    const p = prevByTeam[r.team];
+    return `<tr>
+    <td style="text-align:left;font-weight:600;white-space:nowrap;">${escapeHtml(r.team)}</td>
+    <td>${r.headcount}명</td>
+    <td>${r.cpdAvg.toFixed(1)}<br><span style="color:var(--text-faint);">${r.cpdScore.toFixed(1)}점</span>${p?gap(r.cpdAvg,p.cpdAvg):''}</td>
+    <td>${r.top2}<br><span style="color:var(--text-faint);">${r.top2Score.toFixed(1)}점${r.outboundPenalty?` (발신 ${r.outboundPenalty/2})`:''}</span>${p?gap(r.top2,p.top2):''}</td>
+    <td>${r.nps}<br><span style="color:var(--text-faint);">${r.npsScore.toFixed(1)}점${r.outboundPenalty?` (발신 ${r.outboundPenalty})`:''}</span>${p?gap(r.nps,p.nps):''}</td>
+    <td>${evalFmtSeconds(r.ctAvg)}<br><span style="color:var(--text-faint);">${r.ctScore.toFixed(1)}점</span>${p?`<br>${evalDeltaTimeHtml(r.ctAvg-p.ctAvg)}`:''}</td>
+    <td>${r.complaintPenalty}점</td>
+    <td>${r.resignCount}명 (${r.resignPenalty}점)</td>
+    <td style="font-weight:800;">${r.total.toFixed(1)}점${p?gap(r.total,p.total):''}</td>
+    <td style="font-weight:800;color:var(--success-text);">${r.incentive.toLocaleString()}원${p?gap(r.incentive,p.incentive):''}</td>
+  </tr>`;
+  }).join('');
+  return `
+    <div class="duty-stat-grid">
+      <div class="duty-stat-card accent-blue"><div class="duty-stat-number">${results.length}개팀</div><div class="duty-stat-label">평가 대상 팀</div></div>
+      <div class="duty-stat-card accent-green"><div class="duty-stat-number">${totalIncentive.toLocaleString()}원</div><div class="duty-stat-label">전체 인센티브 합계</div></div>
+    </div>
+    ${prevResults?`<div class="duty-prev-note">📊 전주(${escapeHtml(prevKey)}) 대비 증감을 함께 표시하고 있어요.</div>`:''}
+    <div class="duty-report-section">
+      <div class="duty-report-section-title">🏆 팀별 평가 결과</div>
+      <div style="overflow-x:auto;">
+        <table class="duty-report-table" style="white-space:nowrap;table-layout:fixed;">
+          <colgroup>
+            <col style="width:120px;"><col style="width:70px;">
+            <col style="width:110px;"><col style="width:110px;"><col style="width:110px;"><col style="width:110px;">
+            <col style="width:110px;"><col style="width:110px;"><col style="width:110px;"><col style="width:110px;">
+          </colgroup>
+          <thead><tr><th>팀</th><th>인원</th><th>CPD</th><th>TOP2</th><th>NPS</th><th>Call Time</th><th>민원차감</th><th>퇴직차감</th><th>총점</th><th>인센티브</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+/* ---- 개인별 실적 수기 수정 ---- */
+function evalParseTimeToSeconds(str){
+  const parts = String(str).trim().split(':').map(Number);
+  if(parts.length===0 || parts.some(isNaN)) return null;
+  if(parts.length===3) return parts[0]*3600+parts[1]*60+parts[2];
+  if(parts.length===2) return parts[0]*60+parts[1];
+  if(parts.length===1) return parts[0];
+  return null;
+}
+const EVAL_CELL_FIELDS = {
+  hireDate: {label:'입사일', type:'date'},
+  cpdIn: {label:'CPD IN', type:'number'},
+  cpdOb: {label:'CPD OB', type:'number'},
+  cpdTotal: {label:'CPD Total', type:'number'},
+  ctIn: {label:'CallTime IN', type:'time'},
+  ctOut: {label:'CallTime OUT', type:'time'},
+  ctTotal: {label:'CallTime Total', type:'time'}
+};
+let evalCellEditCtx = null;
+function openEvalCellEditModal(empIdx, field){
+  const sel = getEvalSelectedWeek();
+  const week = evalStore.weekly[sel];
+  if(!week) return;
+  if(isEvalWeekLocked(sel)){ alert('마감(잠금)된 주차는 수정할 수 없어요.'); return; }
+  const emp = week.employees[empIdx];
+  const meta = EVAL_CELL_FIELDS[field];
+  if(!emp || !meta) return;
+  evalCellEditCtx = {empIdx, field};
+  document.getElementById('evalCellEditModalTitle').textContent = `${emp.name} · ${meta.label} 수정`;
+  document.getElementById('evalCellEditModalLabel').textContent = meta.label;
+  const input = document.getElementById('evalCellEditModalInput');
+  input.type = meta.type==='date' ? 'date' : 'text';
+  if(meta.type==='date') input.value = dutyFmtDate(emp[field]);
+  else if(meta.type==='time') input.value = evalFmtSeconds(emp[field]);
+  else input.value = emp[field];
+  document.getElementById('evalCellEditModalHint').textContent =
+    meta.type==='time' ? 'HH:MM:SS 형식으로 입력해주세요 (예: 02:09:28)' :
+    meta.type==='date' ? '' : '숫자로 입력해주세요';
+  document.getElementById('evalCellEditModalOverlay').classList.remove('hidden');
+  setTimeout(()=>{ input.focus(); if(input.select) input.select(); }, 50);
+}
+function closeEvalCellEditModal(){
+  document.getElementById('evalCellEditModalOverlay').classList.add('hidden');
+  document.getElementById('evalCellEditModalInput').type = 'text';
+  evalCellEditCtx = null;
+}
+function confirmEvalCellEditModal(){
+  if(!evalCellEditCtx) return;
+  const {empIdx, field} = evalCellEditCtx;
+  const week = evalStore.weekly[getEvalSelectedWeek()];
+  const emp = week && week.employees[empIdx];
+  const meta = EVAL_CELL_FIELDS[field];
+  if(!emp || !meta){ closeEvalCellEditModal(); return; }
+  const raw = document.getElementById('evalCellEditModalInput').value.trim();
+  let val;
+  if(meta.type==='time'){
+    val = evalParseTimeToSeconds(raw);
+    if(val===null){ alert('시간 형식이 올바르지 않아요. HH:MM:SS로 입력해주세요.'); return; }
+  }else if(meta.type==='date'){
+    if(!raw){ alert('날짜를 입력해주세요.'); return; }
+    const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(!m){ alert('날짜 형식이 올바르지 않아요.'); return; }
+    val = new Date(Date.UTC(Number(m[1]), Number(m[2])-1, Number(m[3])));
+  }else{
+    val = Number(raw);
+    if(isNaN(val)){ alert('숫자를 입력해주세요.'); return; }
+  }
+  emp[field] = val;
+  saveEvalData();
+  closeEvalCellEditModal();
+  renderEvalRefresh();
+}
+document.getElementById('evalCellEditModalOverlay').addEventListener('click',(e)=>{
+  if(e.target.id==='evalCellEditModalOverlay') closeEvalCellEditModal();
+});
+document.getElementById('evalCellEditModalInput').addEventListener('keydown',(e)=>{
+  if(e.key==='Enter'){ e.preventDefault(); confirmEvalCellEditModal(); }
+});
+
+function deleteEvalEmployee(idx){
+  const sel = getEvalSelectedWeek();
+  const week = evalStore.weekly[sel];
+  if(!week) return;
+  if(isEvalWeekLocked(sel)){ alert('마감(잠금)된 주차는 수정할 수 없어요.'); return; }
+  const emp = week.employees[idx];
+  if(!emp) return;
+  if(!confirm(`${emp.name}(${emp.team}) 님을 이번 주차 목록에서 삭제할까요?`)) return;
+  week.employees.splice(idx,1);
+  saveEvalData();
+  renderEvalRefresh();
+}
+function renderEvalEmployeeTable(week, locked){
+  const reducedNames = week.reducedHoursNames || [];
+  const resignTotal = (week.resigned||[]).length;
+  const under80Total = (week.under80List||[]).length;
+  const query = (evalEmployeeSearchQuery||'').trim().toLowerCase();
+  const indexed = week.employees.map((e,idx)=>({e,idx}));
+  const filtered = query ? indexed.filter(({e})=> String(e.name||'').toLowerCase().includes(query) || String(e.team||'').toLowerCase().includes(query)) : indexed;
+  const evalRefDate = new Date(week.dateKey);
+  const rows = filtered.map(({e,idx})=>{
+    const months = dutyMonthsBetween(e.hireDate, evalRefDate);
+    const isReduced = reducedNames.includes(e.name);
+    const excludedTenure = !evalTenureEligible(e.hireDate, evalRefDate);
+    const isUnder80 = isEvalUnder80(week, e.name, e.team);
+    const isResigned = (week.resigned||[]).some(r=>r.name===e.name && r.team===e.team);
+    const badges = `${isReduced?' <span class="eval-badge eval-badge-blue">육단</span>':''}${isResigned?' <span class="eval-badge eval-badge-gray">퇴사</span>':''}`;
+    const editCell = (field, display) => locked
+      ? `<td>${display}</td>`
+      : `<td class="eval-editable-cell" onclick="openEvalCellEditModal(${idx},'${field}')" title="클릭해서 수정">${display}</td>`;
+    return `<tr>
+      <td>${locked?'':`<button type="button" class="eval-row-delete-btn" onclick="deleteEvalEmployee(${idx})" title="이 사람 삭제">✕</button>`}</td>
+      <td style="text-align:left;white-space:nowrap;">${escapeHtml(e.name)}${badges}</td>
+      <td style="white-space:nowrap;">${escapeHtml(e.team)}</td>
+      ${editCell('hireDate', dutyFmtDate(e.hireDate))}
+      ${editCell('cpdIn', e.cpdIn.toFixed(1))}
+      ${editCell('cpdOb', e.cpdOb.toFixed(1))}
+      ${editCell('cpdTotal', `<b>${e.cpdTotal.toFixed(1)}</b>`)}
+      ${editCell('ctIn', evalFmtSeconds(e.ctIn))}
+      ${editCell('ctOut', evalFmtSeconds(e.ctOut))}
+      ${editCell('ctTotal', `<b>${evalFmtSeconds(e.ctTotal)}</b>`)}
+      <td>${months}개월${excludedTenure?' <span style="color:var(--danger-text);">(제외)</span>':''}</td>
+      <td>${isUnder80?'<span class="eval-badge eval-badge-red">✓</span>':''}</td>
+    </tr>`;
+  }).join('');
+  return `<div class="duty-report-section">
+    <div class="duty-report-section-title">
+      <span>👥 개인별 실적 (${query?`검색결과 ${filtered.length}명 / `:''}총 ${week.employees.length}명)${locked?'':' · CPD·CallTime 칸을 클릭하면 수기로 수정할 수 있어요'}</span>
+      <button class="btn-secondary" style="margin-left:auto;" onclick="openEvalReducedHoursModal()" ${locked?'disabled':''}>👶 육아단축자 명단 (${reducedNames.length}명)</button>
+      <button class="btn-secondary" onclick="openEvalUnder80Modal()" ${locked?'disabled':''}>⚠ 80% 미만 근무자 (${under80Total}명)</button>
+      <button class="btn-secondary" onclick="openEvalResignModal()" ${locked?'disabled':''}>🚪 퇴사자 명단 (${resignTotal}명)</button>
+    </div>
+    <input type="text" id="evalEmployeeSearchInput" class="duty-search-input" style="margin-bottom:10px;width:100%;max-width:280px;" placeholder="🔍 이름 또는 팀 검색" value="${escapeHtml(evalEmployeeSearchQuery||'')}" oninput="onEvalEmployeeSearch(event)" oncompositionend="onEvalEmployeeSearch(event)">
+    <div class="duty-table-scroll" style="max-height:500px;">
+      <table class="duty-table" style="white-space:nowrap;">
+        <thead><tr>
+          <th></th><th>이름</th><th>팀</th><th>입사일</th>
+          <th>CPD IN</th><th>CPD OB</th><th>CPD Total</th>
+          <th>CallTime IN</th><th>CallTime OUT</th><th>CallTime Total</th>
+          <th>근속</th><th>80% 미만</th>
+        </tr></thead>
+        <tbody>${rows || `<tr><td colspan="12" style="text-align:center;color:var(--text-faint);padding:20px;">검색 결과가 없어요.</td></tr>`}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+let evalEmployeeSearchQuery = '';
+let evalEmployeeSearchTimer = null;
+function onEvalEmployeeSearch(ev){
+  const val = document.getElementById('evalEmployeeSearchInput').value;
+  clearTimeout(evalEmployeeSearchTimer);
+  evalEmployeeSearchTimer = setTimeout(()=>{
+    evalEmployeeSearchQuery = val;
+    const vc = document.getElementById('eval-view-container');
+    vc.innerHTML = renderEvalView();
+    const input = document.getElementById('evalEmployeeSearchInput');
+    if(input){ input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
+  }, 250);
+}
+function generateEvalExcel(){
+  const sel = getEvalSelectedWeek();
+  const week = evalStore.weekly[sel];
+  if(!week){ alert('다운로드할 데이터가 없어요.'); return; }
+  const reducedNames = week.reducedHoursNames || [];
+  const resigned = week.resigned || [];
+  const evalRefDate = new Date(week.dateKey);
+
+  const header = [
+    '이름','팀','입사일','육단','근속','IN','OUT','Total','IN','OUT','Total','',
+    '팀','TOP2','NPS','발신','민원차감','',
+    '퇴사자','팀','퇴직일'
+  ];
+  const COL_COUNT = header.length;
+  const maxLen = Math.max(week.employees.length, EVAL_TEAMS.length, resigned.length, 1);
+  const aoa = [header];
+  for(let i=0; i<maxLen; i++){
+    const row = new Array(COL_COUNT).fill('');
+    if(i < week.employees.length){
+      const e = week.employees[i];
+      const isReduced = reducedNames.includes(e.name);
+      const mul = isReduced ? 2 : 1;
+      row[0] = e.name;
+      row[1] = e.team;
+      row[2] = dutyFmtDate(e.hireDate);
+      row[3] = isReduced ? 'O' : '';
+      row[4] = dutyMonthsBetween(e.hireDate, evalRefDate);
+      row[5] = Number((e.cpdIn*mul).toFixed(1));
+      row[6] = Number((e.cpdOb*mul).toFixed(1));
+      row[7] = Number((e.cpdTotal*mul).toFixed(1));
+      row[8] = evalFmtSeconds(e.ctIn*mul);
+      row[9] = evalFmtSeconds(e.ctOut*mul);
+      row[10] = evalFmtSeconds(e.ctTotal*mul);
+    }
+    if(i < EVAL_TEAMS.length){
+      const team = EVAL_TEAMS[i];
+      const tm = (week.teamMetrics && week.teamMetrics[team]) || {};
+      row[12] = team;
+      row[13] = tm.top2!=null ? Number((tm.top2/100).toFixed(4)) : '';
+      row[14] = tm.nps!=null ? tm.nps : '';
+      row[15] = tm.outboundRate!=null ? Number((tm.outboundRate/100).toFixed(4)) : '';
+      row[16] = tm.complaints!=null ? tm.complaints : 0;
+      row[17] = tm.outboundRate!=null ? evalOutboundPenalty(tm.outboundRate) : '';
+    }
+    if(i < resigned.length){
+      const r = resigned[i];
+      row[18] = r.name || '';
+      row[19] = r.team || '';
+      row[20] = r.date || '';
+    }
+    aoa.push(row);
+  }
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = header.map(h=> h===''?{wch:3}:{wch:11});
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+  XLSX.writeFile(wb, `${sel}_관리자평가.xlsx`);
+}
 </script>
 
 
