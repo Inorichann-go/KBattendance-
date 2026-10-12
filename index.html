@@ -8994,6 +8994,7 @@ function renderEvalRefresh(){
 
 /* ---- 종합콜현황 업로드 ---- */
 async function onEvalCallDataUpload(ev){
+  if(!isAdminMode()){ ev.target.value=''; return; }
   const file = ev.target.files[0]; if(!file) return;
   try{
     const buf = await file.arrayBuffer();
@@ -9433,7 +9434,7 @@ function renderEvalView(){
         </div>
         <div class="cal-nav-btn" id="evalWeekNext" onclick="evalWeekNav(1)">›</div>
       </div>
-      <button class="btn-secondary" onclick="document.getElementById('evalCallDataInput').click()">📤 종합콜현황 업로드</button>
+      <button class="btn-secondary admin-only" onclick="document.getElementById('evalCallDataInput').click()">📤 종합콜현황 업로드</button>
       <input type="file" id="evalCallDataInput" accept=".xlsx,.xls" style="display:none;" onchange="onEvalCallDataUpload(event)">
       <button class="btn-secondary" onclick="openEvalCriteriaModal()">📐 평가기준 보기</button>
       ${week?`<button class="btn-danger-text" onclick="deleteEvalWeek()" ${locked?'disabled':''}>🗑️ 이 주차 삭제</button>`:''}
