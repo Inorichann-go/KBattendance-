@@ -530,7 +530,7 @@
   }
   .settings-item:hover { background: var(--surface2); }
 
-  /* ── 열람모드/자산전용모드 차단 ── */
+  /* ── 열람모드 차단 ── */
   body.view-mode [onclick*="openEmpModal"],
   body.view-mode [onclick*="deleteEmp"],
   body.view-mode [onclick*="openDayBulkModal"],
@@ -541,23 +541,11 @@
   body.view-mode [onclick*="clearIssueMemo"],
   body.view-mode [onclick*="toggleIssueMemoEdit"],
   body.view-mode input[onchange*="teamColor"],
-  body.view-mode .att-cell,
-  body.asset-mode [onclick*="openEmpModal"],
-  body.asset-mode [onclick*="deleteEmp"],
-  body.asset-mode [onclick*="openDayBulkModal"],
-  body.asset-mode [onclick*="openAttModal"],
-  body.asset-mode [onclick*="openPasteModal"],
-  body.asset-mode [onclick*="confirmReset"],
-  body.asset-mode [onclick*="saveIssueMemo"],
-  body.asset-mode [onclick*="clearIssueMemo"],
-  body.asset-mode [onclick*="toggleIssueMemoEdit"],
-  body.asset-mode input[onchange*="teamColor"],
-  body.asset-mode .att-cell { pointer-events: none !important; cursor: default !important; }
+  body.view-mode .att-cell { pointer-events: none !important; cursor: default !important; }
 
-  body.view-mode .admin-only, body.asset-mode .admin-only { display: none !important; }
-  body.view-mode .asset-admin-only { display: none !important; }
+  body.view-mode .admin-only { display: none !important; }
   body.view-mode .view-only-note { display: inline-block !important; }
-  body.view-mode #issue-memo-section, body.asset-mode #issue-memo-section { display: none !important; }
+  body.view-mode #issue-memo-section { display: none !important; }
   body.view-mode #mode-switch-btn { display: none !important; }
   body.readonly-mode [onclick*="openBulkModal"],
   body.readonly-mode [onclick*="openEditEmpModal"] {
@@ -1752,7 +1740,6 @@
         <label class="form-label">권한</label>
         <select id="acc-role" class="form-select">
           <option value="view">열람 전용</option>
-          <option value="asset">자산관리만 수정 가능</option>
         </select>
       </div>
       <div class="modal-btns" style="justify-content:flex-start;">
@@ -8244,9 +8231,9 @@ async function doUnlock() {
 const MASTER_USERNAME = 'KBKT';
 const MASTER_PASSWORD_HASH = '77b16405ea9e7ede60ede1f84c2be4c1996abe0a428d92d7a7b9b39da5b09d1a'; // ktis1004!
 
-let currentMode = 'view'; // 'view' | 'asset' | 'admin'
+let currentMode = 'view'; // 'view' | 'admin'
 let currentUserName = '';
-let userAccounts = []; // [{id, name, pwHash, role:'view'|'asset'}]
+let userAccounts = []; // [{id, name, pwHash, role:'view'}]
 
 async function hashPw(pw) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
@@ -8307,14 +8294,15 @@ function loginSuccess(role, name) {
   document.getElementById('login-name-input').value = '';
   document.getElementById('login-pw-input').value = '';
   document.getElementById('login-error').textContent = '';
-  const roleLabel = role === 'admin' ? '관리자' : (role === 'asset' ? '자산관리' : '열람');
+  const roleLabel = role === 'admin' ? '관리자' : '열람';
   showToast(`✅ ${name}님(${roleLabel})으로 로그인되었습니다.`);
   setTimeout(loadNotice, 200);
 }
 
 function applyMode(mode) {
+  if (mode === 'asset') mode = 'view'; // 자산관리 역할 폐지 → 열람으로 통합
   currentMode = mode;
-  document.body.classList.remove('view-mode', 'asset-mode', 'admin-mode');
+  document.body.classList.remove('view-mode', 'admin-mode');
   document.body.classList.add(mode + '-mode');
   const icon = document.getElementById('auth-icon');
   const label = document.getElementById('auth-label');
@@ -8323,10 +8311,6 @@ function applyMode(mode) {
       icon.innerHTML = '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>';
       label.textContent = currentUserName ? `관리자(${currentUserName})` : '관리자';
       label.style.color = 'var(--accent)';
-    } else if (mode === 'asset') {
-      icon.innerHTML = '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>';
-      label.textContent = currentUserName ? `자산관리(${currentUserName})` : '자산관리';
-      label.style.color = 'var(--warning)';
     } else {
       icon.innerHTML = '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>';
       label.textContent = currentUserName ? `읽기(${currentUserName})` : '읽기';
@@ -8373,7 +8357,7 @@ function renderAccountList() {
     <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;">
       <div>
         <span style="font-weight:600;font-size:13px;">${escHtml(a.name)}</span>
-        <span style="font-size:11px;color:#fff;background:${a.role==='asset'?'var(--warning)':'var(--text3)'};padding:2px 7px;border-radius:10px;margin-left:6px;">${a.role==='asset'?'자산관리':'열람 전용'}</span>
+        <span style="font-size:11px;color:#fff;background:var(--text3);padding:2px 7px;border-radius:10px;margin-left:6px;">열람 전용</span>
       </div>
       <div style="display:flex;gap:6px;">
         <button class="btn btn-sm" onclick="editAccount('${a.id}')" style="padding:3px 9px;font-size:11px;">수정</button>
@@ -8396,7 +8380,7 @@ function editAccount(id) {
   document.getElementById('acc-edit-id').value = id;
   document.getElementById('acc-name').value = a.name;
   document.getElementById('acc-pw').value = '';
-  document.getElementById('acc-role').value = a.role;
+  document.getElementById('acc-role').value = 'view'; // 자산관리 역할 폐지 → 열람으로 통합
   document.getElementById('acc-pw-hint').textContent = '(비워두면 기존 비밀번호 유지)';
   document.getElementById('account-form-title').textContent = '계정 수정';
   document.getElementById('acc-cancel-btn').style.display = '';
@@ -8504,7 +8488,7 @@ function isAdminMode() { return currentMode === 'admin'; }
 (function() {
   try {
     const saved = sessionStorage.getItem('att_mode');
-    if (saved === 'admin' || saved === 'asset') {
+    if (saved === 'admin') {
       currentMode = saved;
       window._savedMode = saved;
     }
