@@ -10518,7 +10518,10 @@ const CALL_DEDUCTION_DEFS = {
     label: '휴무차감', minCols: 4, dateIdx: 0, nameIdx: 1,
     fields: [
       {key:'날짜', idx:0}, {key:'이름', idx:1}, {key:'사번', idx:2}, {key:'팀', idx:3}, {key:'구분', idx:4}, {key:'비고', idx:5}
-    ]
+    ],
+    /* 구분이 결근인 행은 휴무차감에 포함하지 않음 */
+    exclude: cols=>(cols[4]||'').trim()==='결근',
+    excludeMsg: '구분이 결근인'
   },
   attendanceDeduction: {
     label: '근태차감', minCols: 9, dateIdx: 1, nameIdx: 2,
@@ -10528,7 +10531,8 @@ const CALL_DEDUCTION_DEFS = {
       {key:'급여차감', idx:9}, {key:'차감금액', idx:10, num:true}, {key:'사유', idx:11}
     ],
     /* 근태차감 항목(급여차감 열)이 O인 행은 가져오지 않음 */
-    exclude: cols=>/^[OoＯ○ㅇ]$/.test((cols[9]||'').trim())
+    exclude: cols=>/^[OoＯ○ㅇ]$/.test((cols[9]||'').trim()),
+    excludeMsg: '급여차감 항목이 O인'
   }
 };
 function callDeductionRecordKey(rec, def){ return def.fields.map(f=>String(rec[f.key]??'')).join('\t'); }
@@ -10562,7 +10566,7 @@ function applyCallDeductionPaste(kind, textareaId){
   document.getElementById(textareaId).value='';
   saveCallStatsData();
   renderCallRefresh();
-  alert(`${def.label} ${applied}건 추가됐어요.${excluded?`\n근태차감 항목이 O인 ${excluded}건은 제외했어요.`:''}${dup?`\n이미 등록된 똑같은 ${dup}건은 건너뛰었어요.`:''}`);
+  alert(`${def.label} ${applied}건 추가됐어요.${excluded?`\n${def.excludeMsg} ${excluded}건은 제외했어요.`:''}${dup?`\n이미 등록된 똑같은 ${dup}건은 건너뛰었어요.`:''}`);
 }
 function applyOffDeductionPaste(){ applyCallDeductionPaste('offDeduction', 'callOffDeductionPasteArea'); }
 function applyAttendanceDeductionPaste(){ applyCallDeductionPaste('attendanceDeduction', 'callAttendanceDeductionPasteArea'); }
@@ -10699,7 +10703,7 @@ function renderCallInputView(){
     ${renderCallRawTable()}
 
     <div class="duty-report-section">
-      <div class="duty-report-section-title">④ 휴무차감 (엑셀에서 복사해서 붙여넣기) · [날짜, 이름, 사번, 팀, 구분, 비고] 순서 · 입력일 ${offDay}건 / 전체 ${offCount}건 · 입력일 날짜 행만 등록돼요</div>
+      <div class="duty-report-section-title">④ 휴무차감 (엑셀에서 복사해서 붙여넣기) · [날짜, 이름, 사번, 팀, 구분, 비고] 순서 · 입력일 ${offDay}건 / 전체 ${offCount}건 · 입력일 날짜 행만 등록돼요 · 구분이 결근인 행은 제외돼요</div>
       ${renderCallDeductionTable('offDeduction')}
       ${isAdmin?`<textarea id="callOffDeductionPasteArea" placeholder="엑셀에서 표를 선택해 복사(Ctrl+C)한 뒤 여기에 붙여넣으세요(Ctrl+V)" style="width:100%;min-height:100px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:10px;font-size:11px;font-family:inherit;"></textarea>
       <div class="duty-actions" style="margin-top:8px;">
