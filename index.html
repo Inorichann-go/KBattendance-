@@ -10735,12 +10735,19 @@ function callNameKey(n){ return String(n||'').trim().toLowerCase(); }
 function callEnsureSummaryStore(){
   callStatsStore.roster = callStatsStore.roster || [];
   callStatsStore.periods = callStatsStore.periods || [];
-  if(!callStatsStore.childcare){
-    /* 예전 명단의 육아단축(하루 단축분·시작일)을 육아단축 목록으로 옮김 */
-    callStatsStore.childcare = callStatsStore.roster.filter(p=>Number(p.childcareMin)>0).map(p=>({
-      id: uid(), sabun: p.sabun, name: p.name, start: p.childcareStart||'', end: '', hours: Math.max(0, 8 - Number(p.childcareMin)/60)
-    }));
-  }
+}
+/* 근태상세 > 육아단축 탭 이력(employees[].parentalLeave)에서 그대로 가져옴.
+   sabun을 안 채워서 아래 computeCallSummary의 이름 매칭(fallback)으로 연결됨. */
+function getCallChildcareRecords(){
+  if(typeof employees==='undefined') return [];
+  const out = [];
+  employees.forEach(e=>{
+    (e.parentalLeave||[]).forEach(p=>{
+      if(!p.startDate) return;
+      out.push({ name: e.name, start: p.startDate, end: p.endDate||'', hours: Number(p.hours)||0 });
+    });
+  });
+  return out;
 }
 /* RAW 팀명(IS장기사고2팀, 제휴상담1팀) → 종합현황 팀 코드(사고2팀, 제휴1팀) */
 function callTeamFromRaw(t){
@@ -10824,13 +10831,14 @@ function computeCallSummary(period, ref){
     (offByDate[k] = offByDate[k] || []).push({date: callNormalizePastedDate(r['날짜']), v});
   });
   (callStatsStore.attendanceDeduction||[]).filter(inRange).forEach(r=>{ const k = callNameKey(r['이름']); mins[k] = (mins[k]||0) + (Number(r['경과시간'])||0); });
+  const childcareRecords = getCallChildcareRecords();
 
   const persons = roster.map(p=>{
     const k = callNameKey(p.name);
     const offDays = off[k]||0;
     /* 육아단축: 시작일~종료일(기준일까지) 영업일마다 (8 - 근무시간)×60분을 근태차감에 더함, 그 기간 휴무일은 제외 */
     let childcare = 0;
-    (callStatsStore.childcare||[]).filter(c=>(c.sabun && String(c.sabun).trim()===String(p.sabun).trim()) || (!c.sabun && callNameKey(c.name)===k)).forEach(c=>{
+    childcareRecords.filter(c=>(c.sabun && String(c.sabun).trim()===String(p.sabun).trim()) || (!c.sabun && callNameKey(c.name)===k)).forEach(c=>{
       const from = c.start && c.start>period.start ? c.start : period.start;
       const to = c.end && c.end<ref ? c.end : ref;
       if(from>to) return;
@@ -11010,81 +11018,23 @@ function downloadCallRosterTemplate(){
   XLSX.writeFile(wb, '상담사명단.xlsx');
 }
 
-/* ---- 육아단축 근무 (시작일~종료일, 근무시간) ---- */
-function callChildcareAdd(){
-  if(!isAdminMode()) return;
-  callEnsureSummaryStore();
-  /* 검색창 값: 목록에서 고른 "이름 (팀·사번)" 또는 이름/사번 직접 입력 */
-  const q = document.getElementById('csCcPerson').value.trim();
-  const roster = callStatsStore.roster||[];
-  const sabM = q.match(/·([^·)]+)\)\s*$/);
-  let p = sabM ? roster.find(x=>String(x.sabun).trim()===sabM[1].trim()) : null;
-  if(!p && q){
-    const hits = roster.filter(x=>String(x.sabun).trim()===q || callNameKey(x.name)===callNameKey(q));
-    if(hits.length>1){ alert(`"${q}" 이름이 ${hits.length}명이에요. 목록에서 팀·사번으로 골라주세요.`); return; }
-    p = hits[0];
-  }
-  const start = callNormalizePastedDate(document.getElementById('csCcStart').value);
-  const end = document.getElementById('csCcEnd').value ? callNormalizePastedDate(document.getElementById('csCcEnd').value) : '';
-  const hours = Number(document.getElementById('csCcHours').value);
-  if(!p){ alert(q ? `"${q}"을(를) 명단에서 찾지 못했어요. 이름이나 사번을 입력하고 목록에서 골라주세요.` : '상담사를 검색해서 골라주세요.'); return; }
-  if(!start){ alert('시작일을 입력해주세요.'); return; }
-  if(end && end<start){ alert('종료일이 시작일보다 빨라요.'); return; }
-  if(!(hours>0 && hours<8)){ alert('근무시간은 0보다 크고 8보다 작은 시간으로 입력해주세요. (예: 6)'); return; }
-  callStatsStore.childcare.push({ id: uid(), sabun: p.sabun, name: p.name, start, end, hours });
-  saveCallStatsData(); renderCallSummaryRefresh();
-}
-function callChildcareEdit(id, key, value){
-  if(!isAdminMode()){ setTimeout(renderCallSummaryRefresh,0); return; }
-  const c = (callStatsStore.childcare||[]).find(x=>x.id===id); if(!c) return;
-  if(key==='hours'){
-    const h = Number(value);
-    if(!(h>0 && h<8)){ alert('근무시간은 0보다 크고 8보다 작은 시간으로 입력해주세요.'); setTimeout(renderCallSummaryRefresh,0); return; }
-    c.hours = h;
-  }else{
-    const d = value ? callNormalizePastedDate(value) : '';
-    if(value && !d){ alert('날짜 형식을 알 수 없어요. 예: 2026-10-01'); setTimeout(renderCallSummaryRefresh,0); return; }
-    if(key==='start' && !d){ alert('시작일은 비울 수 없어요.'); setTimeout(renderCallSummaryRefresh,0); return; }
-    c[key] = d;
-  }
-  saveCallStatsData(); setTimeout(renderCallSummaryRefresh,0);
-}
-function callChildcareDelete(id){
-  if(!isAdminMode()) return;
-  const c = (callStatsStore.childcare||[]).find(x=>x.id===id); if(!c) return;
-  if(!confirm(`${c.name}님의 육아단축(${c.start} ~ ${c.end||'계속'})을 삭제할까요?`)) return;
-  callStatsStore.childcare = callStatsStore.childcare.filter(x=>x.id!==id);
-  saveCallStatsData(); renderCallSummaryRefresh();
-}
+/* ---- 육아단축 근무 (근태상세 > 육아단축 탭 이력을 그대로 보여주는 조회 전용 섹션) ---- */
 function renderCallChildcareSection(){
-  const isAdmin = isAdminMode();
-  const list = (callStatsStore.childcare||[]).slice().sort((a,b)=>(a.start||'').localeCompare(b.start||''));
-  const roster = callStatsStore.roster||[];
-  const personOpts = roster.slice().sort((a,b)=>a.name.localeCompare(b.name,'ko'))
-    .map(p=>`<option value="${escapeHtml(`${p.name} (${p.team||'팀 없음'}·${p.sabun})`)}"></option>`).join('');
+  const list = getCallChildcareRecords().slice().sort((a,b)=>(a.start||'').localeCompare(b.start||''));
   const rows = list.map(c=>`<tr>
-      <td class="call-raw-del">${isAdmin?`<button class="eval-row-delete-btn" title="삭제" onclick="callChildcareDelete('${c.id}')">✕</button>`:''}</td>
-      <td style="text-align:left;font-weight:600;">${escapeHtml(c.name)} <span style="color:var(--text-faint);">${escapeHtml(c.sabun||'')}</span></td>
-      <td><input type="date" class="duty-month-select" value="${c.start||''}" onchange="callChildcareEdit('${c.id}','start',this.value)" ${isAdmin?'':'disabled'}></td>
-      <td><input type="date" class="duty-month-select" value="${c.end||''}" onchange="callChildcareEdit('${c.id}','end',this.value)" ${isAdmin?'':'disabled'}></td>
-      <td><input class="call-edit-input call-raw-input num" value="${c.hours}" size="3" onchange="callChildcareEdit('${c.id}','hours',this.value)" ${isAdmin?'':'disabled'}> 시간</td>
+      <td style="text-align:left;font-weight:600;">${escapeHtml(c.name)}</td>
+      <td>${escapeHtml(c.start||'')}</td>
+      <td>${escapeHtml(c.end||'')}</td>
+      <td>${c.hours}시간</td>
       <td>하루 ${Math.round((8-(Number(c.hours)||0))*60)}분</td>
       <td style="color:var(--text-soft);">${c.end?'':'종료일 없음(계속)'}</td>
     </tr>`).join('');
   return `<details class="duty-report-section" id="csChildcareBox">
-    <summary class="duty-report-section-title" style="cursor:pointer;margin:0;">👶 육아단축 근무 (${list.length}건) · 시작일~종료일 동안 (8 - 근무시간)×60분을 하루마다 근태차감으로 보정해요</summary>
+    <summary class="duty-report-section-title" style="cursor:pointer;margin:0;">👶 육아단축 근무 (${list.length}건) · 근태상세 &gt; 육아단축 탭 이력에서 자동으로 가져와요. 시작일~종료일 동안 (8 - 근무시간)×60분을 하루마다 근태차감으로 보정해요</summary>
     ${list.length?`<div class="duty-table-scroll" style="max-height:320px;margin-top:10px;">
-      <table class="duty-table call-raw-table"><thead><tr><th class="call-raw-del"></th><th>상담사</th><th>시작일</th><th>종료일</th><th>근무시간</th><th>보정</th><th></th></tr></thead><tbody>${rows}</tbody></table>
-    </div>`:''}
-    ${isAdmin?`<div class="call-add-row" style="flex-wrap:wrap;align-items:center;">
-      <input type="search" id="csCcPerson" list="csCcPeople" placeholder="${roster.length?'🔍 이름·사번 검색':'명단을 먼저 올려주세요'}" autocomplete="off" style="width:230px;height:30px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:0 10px;font-size:12px;font-family:inherit;">
-      <datalist id="csCcPeople">${personOpts}</datalist>
-      <span>시작</span><input type="date" id="csCcStart" style="width:auto;">
-      <span>종료</span><input type="date" id="csCcEnd" style="width:auto;" title="비우면 계속 적용">
-      <span>근무</span><input type="number" id="csCcHours" placeholder="예: 6" step="0.5" min="0.5" max="7.5" style="width:70px;"><span>시간</span>
-      <button class="btn-primary" onclick="callChildcareAdd()">+ 추가</button>
-    </div>`:''}
-    <div class="duty-month-hint" style="margin-top:6px;">종료일을 비우면 계속 적용돼요. 월 중간에 끝나면 종료일까지만 보정해요. 그 기간 휴무일은 보정에서 빠져요.</div>
+      <table class="duty-table call-raw-table"><thead><tr><th>상담사</th><th>시작일</th><th>종료일</th><th>근무시간</th><th>보정</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+    </div>`:'<div class="empty-state" style="padding:12px 0;">등록된 육아단축 이력이 없어요.</div>'}
+    <div class="duty-month-hint" style="margin-top:6px;">명단을 바꾸려면 근태상세 &gt; 육아단축 탭에서 이력을 수정해주세요. 종료일이 없으면 계속 적용돼요. 그 기간 휴무일은 보정에서 빠져요.</div>
   </details>`;
 }
 
