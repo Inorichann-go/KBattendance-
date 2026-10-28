@@ -8608,12 +8608,14 @@ let currentUserName = '';
 let userAccounts = []; // [{id, name, pwHash, role:'view'}]
 let appScope = null; // 'attendance' | 'performance' — 처음 화면에서 고른 업무 구분
 
+let noticeLoadedThisSession = false;
 function selectScope(scope) {
   appScope = scope;
   try { sessionStorage.setItem('att_scope', scope); } catch(e) {}
   document.body.classList.remove('scope-attendance', 'scope-performance');
   document.body.classList.add('scope-' + scope);
   showTab(scope === 'performance' ? 5 : 0);
+  if (!noticeLoadedThisSession) { noticeLoadedThisSession = true; setTimeout(loadNotice, 300); }
 }
 function backToScopeSelect() {
   appScope = null;
@@ -8978,15 +8980,15 @@ async function init() {
   currentUserName = sessionStorage.getItem('att_user') || '';
   applyMode(savedMode);
 
-  // 업무 선택(근태관리/실적관리) 세션 복원 — 없으면 선택 화면이 그대로 보임
+  // 업무 선택(근태관리/실적관리) 세션 복원 — 없으면 선택 화면이 그대로 보이고, 공지 팝업도 업무를 고른 뒤에만 뜸
   const savedScope = sessionStorage.getItem('att_scope');
   if (savedScope === 'attendance' || savedScope === 'performance') {
     appScope = savedScope;
     document.body.classList.add('scope-' + savedScope);
     showTab(savedScope === 'performance' ? 5 : 0);
+    noticeLoadedThisSession = true;
+    setTimeout(loadNotice, 300);
   }
-
-  setTimeout(loadNotice, 300);
 }
 init();
 
