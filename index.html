@@ -852,6 +852,10 @@
     <span style="font-size:14px;font-weight:600;color:#1e293b;">KB손해보험 부천센터 근태관리 시스템</span>
   </div>
   <div class="header-right">
+    <button class="btn" id="scope-switch-btn" onclick="backToScopeSelect()" style="font-size:12px;padding:5px 11px;" title="처음 화면(근태관리/실적관리 선택)으로 돌아가기">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><path d="M3.5 11.2 12 4l8.5 7.2"/><path d="M6 9.8V19a1 1 0 0 0 1 1h3.2v-5.2h3.6V20H17a1 1 0 0 0 1-1V9.8"/></svg>
+      처음으로
+    </button>
     <button class="btn" onclick="openNoticePopup()" style="font-size:12px;padding:5px 11px;">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><path d="M22 4L12 14.01l-3-3"/><path d="M3 8.67v9.45a2 2 0 0 0 2.4 1.96l12-3A2 2 0 0 0 19 15V9.67a2 2 0 0 0-1.6-1.96l-12-3A2 2 0 0 0 3 6.71v1.96"/></svg>
       공지사항
@@ -906,7 +910,6 @@
   <div class="tab tab-performance" onclick="showTab(5)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 4h3.4l1.6 4.2-2.2 1.5a10.6 10.6 0 0 0 4.9 4.9l1.5-2.2 4.2 1.6v3.4a1.6 1.6 0 0 1-1.7 1.6A15.6 15.6 0 0 1 3.6 5.7 1.6 1.6 0 0 1 5.2 4Z"/></svg> 종합콜현황</div>
   <div class="tab tab-performance" onclick="showTab(6)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4h9v3.6a4.5 4.5 0 0 1-9 0Z"/><path d="M5.7 6H4a1.8 1.8 0 0 0 1.7 3.6M18.3 6H20a1.8 1.8 0 0 1-1.7 3.6"/><path d="M12 11.6v3M9.3 20h5.4M10.4 17.2h3.2v2.8h-3.2Z"/></svg> 관리자평가</div>
 
-  <button class="btn" id="scope-switch-btn" onclick="backToScopeSelect()" style="margin-left:auto;font-size:11.5px;padding:6px 12px;" title="처음 화면으로">🏠 처음으로</button>
 </div>
 
 <!-- ═══════════════════════════════ TAB 0: SUMMARY ═══════════════════════════════ -->
@@ -9353,25 +9356,27 @@ function closeEvalUnder80Modal(){
   document.getElementById('evalUnder80ModalOverlay').classList.add('hidden');
 }
 function renderEvalUnder80ModalBody(){
+  const isAdmin = isAdminMode();
   const week = evalStore.weekly[getEvalSelectedWeek()];
   const list = (week && week.under80List) || [];
   const teamOpts = EVAL_TEAMS.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
   const rows = list.map((r,idx)=>`<li class="center-row">
     <span style="flex:1;font-size:12px;">${escapeHtml(r.name)} · ${escapeHtml(r.team)}</span>
-    <button type="button" class="btn-secondary" style="padding:5px 10px;font-size:11px;" onclick="removeEvalUnder80(${idx})">삭제</button>
+    ${isAdmin?`<button type="button" class="btn-secondary" style="padding:5px 10px;font-size:11px;" onclick="removeEvalUnder80(${idx})">삭제</button>`:''}
   </li>`).join('') || '<li class="empty-state" style="padding:10px 0;">등록된 사람이 없어요.</li>';
   document.getElementById('evalUnder80ModalBody').innerHTML = `
     <ul class="center-list" style="margin-bottom:12px;max-height:400px;">${rows}</ul>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+    ${isAdmin?`<div style="display:flex;gap:6px;flex-wrap:wrap;">
       <input type="text" id="evalUnder80NameInput" placeholder="이름" style="flex:1;min-width:100px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;font-family:inherit;" onkeydown="if(event.key==='Enter'){event.preventDefault();addEvalUnder80();}">
       <select id="evalUnder80TeamInput" style="border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;font-family:inherit;">${teamOpts}</select>
       <button type="button" class="btn-primary" onclick="addEvalUnder80()">추가</button>
-    </div>
+    </div>`:''}
   `;
   const inp80 = document.getElementById('evalUnder80NameInput');
   if(inp80) inp80.focus();
 }
 function addEvalUnder80(){
+  if(!isAdminMode()) return;
   const name = document.getElementById('evalUnder80NameInput').value.trim();
   const team = document.getElementById('evalUnder80TeamInput').value;
   if(!name){ alert('이름을 입력해주세요.'); return; }
@@ -9384,6 +9389,7 @@ function addEvalUnder80(){
   renderEvalRefresh();
 }
 function removeEvalUnder80(idx){
+  if(!isAdminMode()) return;
   const week = evalStore.weekly[getEvalSelectedWeek()];
   week.under80List.splice(idx,1);
   saveEvalData();
@@ -9421,26 +9427,28 @@ function closeEvalResignModal(){
   document.getElementById('evalResignModalOverlay').classList.add('hidden');
 }
 function renderEvalResignModalBody(){
+  const isAdmin = isAdminMode();
   const week = evalStore.weekly[getEvalSelectedWeek()];
   const list = (week && week.resigned) || [];
   const teamOpts = EVAL_TEAMS.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
   const rows = list.map((r,idx)=>`<li class="center-row">
     <span style="flex:1;font-size:12px;">${escapeHtml(r.name)} · ${escapeHtml(r.team)} · ${escapeHtml(r.date||'')}</span>
-    <button type="button" class="btn-secondary" style="padding:5px 10px;font-size:11px;" onclick="removeEvalResign(${idx})">삭제</button>
+    ${isAdmin?`<button type="button" class="btn-secondary" style="padding:5px 10px;font-size:11px;" onclick="removeEvalResign(${idx})">삭제</button>`:''}
   </li>`).join('') || '<li class="empty-state" style="padding:10px 0;">등록된 퇴사자가 없어요.</li>';
   document.getElementById('evalResignModalBody').innerHTML = `
     <ul class="center-list" style="margin-bottom:12px;max-height:400px;">${rows}</ul>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+    ${isAdmin?`<div style="display:flex;gap:6px;flex-wrap:wrap;">
       <input type="text" id="evalResignNameInput" placeholder="이름" style="flex:1;min-width:100px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;font-family:inherit;" onkeydown="if(event.key==='Enter'){event.preventDefault();addEvalResign();}">
       <select id="evalResignTeamInput" style="border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;font-family:inherit;">${teamOpts}</select>
       <input type="date" id="evalResignDateInput" style="border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;font-family:inherit;" onkeydown="if(event.key==='Enter'){event.preventDefault();addEvalResign();}">
       <button type="button" class="btn-primary" onclick="addEvalResign()">추가</button>
-    </div>
+    </div>`:''}
   `;
   const inpResign = document.getElementById('evalResignNameInput');
   if(inpResign) inpResign.focus();
 }
 function addEvalResign(){
+  if(!isAdminMode()) return;
   const name = document.getElementById('evalResignNameInput').value.trim();
   const team = document.getElementById('evalResignTeamInput').value;
   const date = document.getElementById('evalResignDateInput').value;
@@ -9453,6 +9461,7 @@ function addEvalResign(){
   renderEvalRefresh();
 }
 function removeEvalResign(idx){
+  if(!isAdminMode()) return;
   const week = evalStore.weekly[getEvalSelectedWeek()];
   week.resigned.splice(idx,1);
   saveEvalData();
@@ -9571,6 +9580,7 @@ function computeEvalSummary(dateKey){
 
 /* ---- 렌더링 ---- */
 function renderEvalView(){
+  const isAdmin = isAdminMode();
   const weekKeys = Object.keys(evalStore.weekly).sort();
   const sel = getEvalSelectedWeek();
   const week = evalStore.weekly[sel];
@@ -9589,7 +9599,7 @@ function renderEvalView(){
       <button class="btn-secondary admin-only" onclick="document.getElementById('evalCallDataInput').click()">📤 종합콜현황 업로드</button>
       <input type="file" id="evalCallDataInput" accept=".xlsx,.xls" style="display:none;" onchange="onEvalCallDataUpload(event)">
       <button class="btn-secondary" onclick="openEvalCriteriaModal()">📐 평가기준 보기</button>
-      ${week?`<button class="btn-danger-text" onclick="deleteEvalWeek()" ${locked?'disabled':''}>🗑️ 이 주차 삭제</button>`:''}
+      ${isAdmin && week?`<button class="btn-danger-text" onclick="deleteEvalWeek()" ${locked?'disabled':''}>🗑️ 이 주차 삭제</button>`:''}
       ${locked?`<span class="duty-lock-badge">🔒 마감(잠금)됨 — 조회·다운로드만 가능</span>`:''}
       ${week?`<button class="btn-primary" style="margin-left:auto;" onclick="generateEvalExcel()">📥 결과 엑셀 다운로드</button>`:''}
       <span class="duty-month-hint">이 탭은 다른 탭들과 완전히 독립적으로 동작해요. 매주 종합콜현황 파일을 새로 업로드하면 그 기준일로 자동 저장돼요.</span>
@@ -9605,6 +9615,7 @@ function renderEvalView(){
   return html;
 }
 function deleteEvalWeek(){
+  if(!isAdminMode()) return;
   const sel = getEvalSelectedWeek();
   if(!evalStore.weekly[sel]) return;
   if(isEvalWeekLocked(sel)){ alert('마감(잠금)된 주차는 삭제할 수 없어요. 설정에서 잠금을 해제해주세요.'); return; }
@@ -9619,6 +9630,7 @@ function isEvalWeekLocked(dateKey){
   return (evalStore.lockedWeeks||[]).includes(dateKey);
 }
 function setEvalWeekLocked(dateKey, locked){
+  if(!isAdminMode()) return;
   evalStore.lockedWeeks = evalStore.lockedWeeks || [];
   if(locked){ if(!evalStore.lockedWeeks.includes(dateKey)) evalStore.lockedWeeks.push(dateKey); }
   else{ evalStore.lockedWeeks = evalStore.lockedWeeks.filter(k=>k!==dateKey); }
@@ -9637,6 +9649,7 @@ function closeEvalLockModal(){
   document.getElementById('evalLockModalOverlay').classList.add('hidden');
 }
 function renderEvalLockModalBody(){
+  const isAdmin = isAdminMode();
   const weekKeys = Object.keys(evalStore.weekly||{}).sort();
   const locked = evalStore.lockedWeeks || [];
   const body = document.getElementById('evalLockModalBody');
@@ -9645,7 +9658,7 @@ function renderEvalLockModalBody(){
     return `<li class="center-row">
       <span style="flex:1;font-size:12px;font-weight:600;">${escapeHtml(k)}</span>
       <span style="font-size:10.5px;font-weight:700;margin-right:8px;color:${isLocked?'#D64545':'#1F8A4C'};">${isLocked?'🔒 마감됨':'🔓 해제됨'}</span>
-      <button type="button" class="btn-secondary" style="padding:6px 10px;font-size:11px;" onclick="toggleEvalWeekLockFromModal('${k}')">${isLocked?'잠금 해제':'마감(잠금)'}</button>
+      ${isAdmin?`<button type="button" class="btn-secondary" style="padding:6px 10px;font-size:11px;" onclick="toggleEvalWeekLockFromModal('${k}')">${isLocked?'잠금 해제':'마감(잠금)'}</button>`:''}
     </li>`;
   }).join('') || '<li class="empty-state" style="padding:10px 0;">저장된 관리자평가 데이터가 없어요.</li>';
   body.innerHTML = `<ul class="center-list" style="margin-bottom:0;">${rows}</ul>`;
@@ -9848,6 +9861,7 @@ const EVAL_CELL_FIELDS = {
 };
 let evalCellEditCtx = null;
 function openEvalCellEditModal(empIdx, field){
+  if(!isAdminMode()) return;
   const sel = getEvalSelectedWeek();
   const week = evalStore.weekly[sel];
   if(!week) return;
@@ -9875,6 +9889,7 @@ function closeEvalCellEditModal(){
   evalCellEditCtx = null;
 }
 function confirmEvalCellEditModal(){
+  if(!isAdminMode()){ closeEvalCellEditModal(); return; }
   if(!evalCellEditCtx) return;
   const {empIdx, field} = evalCellEditCtx;
   const week = evalStore.weekly[getEvalSelectedWeek()];
@@ -9908,6 +9923,7 @@ document.getElementById('evalCellEditModalInput').addEventListener('keydown',(e)
 });
 
 function deleteEvalEmployee(idx){
+  if(!isAdminMode()) return;
   const sel = getEvalSelectedWeek();
   const week = evalStore.weekly[sel];
   if(!week) return;
@@ -9920,6 +9936,8 @@ function deleteEvalEmployee(idx){
   renderEvalRefresh();
 }
 function renderEvalEmployeeTable(week, locked){
+  const isAdmin = isAdminMode();
+  const editable = !locked && isAdmin;
   const reducedNames = getEvalReducedHoursNames(week.dateKey);
   const resignTotal = (week.resigned||[]).length;
   const under80Total = (week.under80List||[]).length;
@@ -9934,11 +9952,11 @@ function renderEvalEmployeeTable(week, locked){
     const isUnder80 = isEvalUnder80(week, e.name, e.team);
     const isResigned = (week.resigned||[]).some(r=>r.name===e.name && r.team===e.team);
     const badges = `${isReduced?' <span class="eval-badge eval-badge-blue">육단</span>':''}${isResigned?' <span class="eval-badge eval-badge-gray">퇴사</span>':''}`;
-    const editCell = (field, display) => locked
-      ? `<td>${display}</td>`
-      : `<td class="eval-editable-cell" onclick="openEvalCellEditModal(${idx},'${field}')" title="클릭해서 수정">${display}</td>`;
+    const editCell = (field, display) => editable
+      ? `<td class="eval-editable-cell" onclick="openEvalCellEditModal(${idx},'${field}')" title="클릭해서 수정">${display}</td>`
+      : `<td>${display}</td>`;
     return `<tr>
-      <td>${locked?'':`<button type="button" class="eval-row-delete-btn" onclick="deleteEvalEmployee(${idx})" title="이 사람 삭제">✕</button>`}</td>
+      <td>${editable?`<button type="button" class="eval-row-delete-btn" onclick="deleteEvalEmployee(${idx})" title="이 사람 삭제">✕</button>`:''}</td>
       <td style="text-align:left;white-space:nowrap;">${escapeHtml(e.name)}${badges}</td>
       <td style="white-space:nowrap;">${escapeHtml(e.team)}</td>
       ${editCell('hireDate', dutyFmtDate(e.hireDate))}
@@ -9954,10 +9972,10 @@ function renderEvalEmployeeTable(week, locked){
   }).join('');
   return `<div class="duty-report-section">
     <div class="duty-report-section-title">
-      <span>👥 개인별 실적 (${query?`검색결과 ${filtered.length}명 / `:''}총 ${week.employees.length}명)${locked?'':' · CPD·CallTime 칸을 클릭하면 수기로 수정할 수 있어요'}</span>
+      <span>👥 개인별 실적 (${query?`검색결과 ${filtered.length}명 / `:''}총 ${week.employees.length}명)${editable?' · CPD·CallTime 칸을 클릭하면 수기로 수정할 수 있어요':''}</span>
       <button class="btn-secondary" style="margin-left:auto;" onclick="openEvalReducedHoursModal()">👶 육아단축자 명단 (${reducedNames.length}명)</button>
-      <button class="btn-secondary" onclick="openEvalUnder80Modal()" ${locked?'disabled':''}>⚠ 80% 미만 근무자 (${under80Total}명)</button>
-      <button class="btn-secondary" onclick="openEvalResignModal()" ${locked?'disabled':''}>🚪 퇴사자 명단 (${resignTotal}명)</button>
+      <button class="btn-secondary" onclick="openEvalUnder80Modal()">⚠ 80% 미만 근무자 (${under80Total}명)</button>
+      <button class="btn-secondary" onclick="openEvalResignModal()">🚪 퇴사자 명단 (${resignTotal}명)</button>
     </div>
     <input type="text" id="evalEmployeeSearchInput" class="duty-search-input" style="margin-bottom:10px;width:100%;max-width:280px;" placeholder="🔍 이름 또는 팀 검색" value="${escapeHtml(evalEmployeeSearchQuery||'')}" oninput="onEvalEmployeeSearch(event)" oncompositionend="onEvalEmployeeSearch(event)">
     <div class="duty-table-scroll" style="max-height:500px;">
