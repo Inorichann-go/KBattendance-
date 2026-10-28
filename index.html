@@ -802,9 +802,48 @@
     padding:7px 12px;border-radius:999px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;
   }
   .category-chip.active{background:var(--text);color:#fff;border-color:var(--text);}
+
+  /* ── 업무 선택 화면 (근태관리 / 실적관리) ── */
+  #scope-select-screen{
+    display:none; position:fixed; inset:0; z-index:5000; background:var(--bg);
+    flex-direction:column; align-items:center; justify-content:center; gap:28px;
+  }
+  body:not(.scope-attendance):not(.scope-performance) #scope-select-screen{ display:flex; }
+  body:not(.scope-attendance):not(.scope-performance) header,
+  body:not(.scope-attendance):not(.scope-performance) .tabs,
+  body:not(.scope-attendance):not(.scope-performance) .panel{ display:none !important; }
+  body.scope-performance .tab-attendance{ display:none !important; }
+  body.scope-attendance .tab-performance{ display:none !important; }
+  .scope-card{
+    width:240px; padding:36px 22px; border:2px solid var(--border); border-radius:var(--radius-lg);
+    background:var(--surface); cursor:pointer; text-align:center; transition:all .15s;
+  }
+  .scope-card:hover{ border-color:var(--accent); box-shadow:var(--shadow-md); transform:translateY(-2px); }
+  .scope-card-icon{ font-size:38px; margin-bottom:12px; }
+  .scope-card-title{ font-size:17px; font-weight:800; color:var(--text); margin-bottom:8px; }
+  .scope-card-desc{ font-size:11.5px; color:var(--text3); line-height:1.6; }
 </style>
 </head>
 <body>
+
+<div id="scope-select-screen">
+  <div style="text-align:center;margin-bottom:6px;">
+    <div style="font-size:13px;font-weight:600;color:var(--text3);">KB손해보험 부천센터</div>
+    <div style="font-size:22px;font-weight:800;color:var(--text);margin-top:4px;">어떤 업무를 보시겠어요?</div>
+  </div>
+  <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;">
+    <div class="scope-card" onclick="selectScope('attendance')">
+      <div class="scope-card-icon">📋</div>
+      <div class="scope-card-title">근태관리</div>
+      <div class="scope-card-desc">근태현황 · 개인 근태 · 근태 상세<br>연차관리 · 이달의 이슈</div>
+    </div>
+    <div class="scope-card" onclick="selectScope('performance')">
+      <div class="scope-card-icon">📊</div>
+      <div class="scope-card-title">실적관리</div>
+      <div class="scope-card-desc">종합콜현황 · 관리자평가</div>
+    </div>
+  </div>
+</div>
 
 <header>
   <div class="logo">
@@ -858,15 +897,16 @@
 </header>
 
 <div class="tabs">
-  <div class="tab active" onclick="showTab(0)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg> 근태현황</div>
+  <div class="tab tab-attendance active" onclick="showTab(0)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg> 근태현황</div>
 
-  <div class="tab" onclick="showTab(1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> 개인 근태</div>
-  <div class="tab" onclick="showTab(2)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> 근태 상세</div>
-  <div class="tab" onclick="showTab(3)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> 연차관리</div>
-  <div class="tab" onclick="showTab(4)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> 이달의 이슈</div>
-  <div class="tab admin-only" onclick="showTab(5)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 4h3.4l1.6 4.2-2.2 1.5a10.6 10.6 0 0 0 4.9 4.9l1.5-2.2 4.2 1.6v3.4a1.6 1.6 0 0 1-1.7 1.6A15.6 15.6 0 0 1 3.6 5.7 1.6 1.6 0 0 1 5.2 4Z"/></svg> 종합콜현황</div>
-  <div class="tab admin-only" onclick="showTab(6)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4h9v3.6a4.5 4.5 0 0 1-9 0Z"/><path d="M5.7 6H4a1.8 1.8 0 0 0 1.7 3.6M18.3 6H20a1.8 1.8 0 0 1-1.7 3.6"/><path d="M12 11.6v3M9.3 20h5.4M10.4 17.2h3.2v2.8h-3.2Z"/></svg> 관리자평가</div>
+  <div class="tab tab-attendance" onclick="showTab(1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> 개인 근태</div>
+  <div class="tab tab-attendance" onclick="showTab(2)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> 근태 상세</div>
+  <div class="tab tab-attendance" onclick="showTab(3)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> 연차관리</div>
+  <div class="tab tab-attendance" onclick="showTab(4)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> 이달의 이슈</div>
+  <div class="tab tab-performance" onclick="showTab(5)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 4h3.4l1.6 4.2-2.2 1.5a10.6 10.6 0 0 0 4.9 4.9l1.5-2.2 4.2 1.6v3.4a1.6 1.6 0 0 1-1.7 1.6A15.6 15.6 0 0 1 3.6 5.7 1.6 1.6 0 0 1 5.2 4Z"/></svg> 종합콜현황</div>
+  <div class="tab tab-performance" onclick="showTab(6)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4h9v3.6a4.5 4.5 0 0 1-9 0Z"/><path d="M5.7 6H4a1.8 1.8 0 0 0 1.7 3.6M18.3 6H20a1.8 1.8 0 0 1-1.7 3.6"/><path d="M12 11.6v3M9.3 20h5.4M10.4 17.2h3.2v2.8h-3.2Z"/></svg> 관리자평가</div>
 
+  <button class="btn" id="scope-switch-btn" onclick="backToScopeSelect()" style="margin-left:auto;font-size:11.5px;padding:6px 12px;" title="처음 화면으로">🏠 처음으로</button>
 </div>
 
 <!-- ═══════════════════════════════ TAB 0: SUMMARY ═══════════════════════════════ -->
@@ -3033,7 +3073,8 @@ let _localStorageAvailable = false;
 //  TAB
 // ══════════════════════════════
 function showTab(i) {
-  if ((i===5 || i===6) && !isAdminMode()) i = 0;
+  if ((i===5 || i===6) && appScope==='attendance') i = 0;
+  if ((i>=0 && i<=4) && appScope==='performance') i = 5;
   document.querySelectorAll('.tab').forEach((t,j) => t.classList.toggle('active', j===i));
   document.querySelectorAll('.panel').forEach((p,j) => p.classList.toggle('active', j===i));
   if (i===0) { initSummaryDashControls(); renderSummaryDash(); }
@@ -8565,6 +8606,20 @@ const MASTER_PASSWORD_HASH = '77b16405ea9e7ede60ede1f84c2be4c1996abe0a428d92d7a7
 let currentMode = 'view'; // 'view' | 'admin'
 let currentUserName = '';
 let userAccounts = []; // [{id, name, pwHash, role:'view'}]
+let appScope = null; // 'attendance' | 'performance' — 처음 화면에서 고른 업무 구분
+
+function selectScope(scope) {
+  appScope = scope;
+  try { sessionStorage.setItem('att_scope', scope); } catch(e) {}
+  document.body.classList.remove('scope-attendance', 'scope-performance');
+  document.body.classList.add('scope-' + scope);
+  showTab(scope === 'performance' ? 5 : 0);
+}
+function backToScopeSelect() {
+  appScope = null;
+  try { sessionStorage.removeItem('att_scope'); } catch(e) {}
+  document.body.classList.remove('scope-attendance', 'scope-performance');
+}
 
 async function hashPw(pw) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
@@ -8653,11 +8708,6 @@ function applyMode(mode) {
   const memoSection = document.getElementById('issue-memo-section');
   if (memoSection) memoSection.style.display = (mode === 'admin') ? '' : 'none';
   try { sessionStorage.setItem('att_mode', mode); } catch(e) {}
-  if (mode !== 'admin') {
-    const tabs = document.querySelectorAll('.tab');
-    const activeIdx = [...tabs].findIndex(t => t.classList.contains('active'));
-    if (activeIdx === 5 || activeIdx === 6) showTab(0);
-  }
 }
 
 function toggleAuthMode() {
@@ -8927,6 +8977,14 @@ async function init() {
   const savedMode = sessionStorage.getItem('att_mode') || 'view';
   currentUserName = sessionStorage.getItem('att_user') || '';
   applyMode(savedMode);
+
+  // 업무 선택(근태관리/실적관리) 세션 복원 — 없으면 선택 화면이 그대로 보임
+  const savedScope = sessionStorage.getItem('att_scope');
+  if (savedScope === 'attendance' || savedScope === 'performance') {
+    appScope = savedScope;
+    document.body.classList.add('scope-' + savedScope);
+    showTab(savedScope === 'performance' ? 5 : 0);
+  }
 
   setTimeout(loadNotice, 300);
 }
