@@ -5435,14 +5435,18 @@ function generateResignRateExcel(){
 
   const allTeams = [...new Set(monthly.flatMap(x=>Object.keys(x.perTeam)))].sort();
   const rateOf = (leave, active) => active>0 ? Number((leave/active*100).toFixed(1)) : (leave>0 ? 'N/A(월초재직0)' : 0);
+  const rateOfPct = (leave, active) => {
+    const r = rateOf(leave, active);
+    return typeof r === 'number' ? `${r}%` : r;
+  };
 
   // ── Sheet 1: 팀별 월별 퇴직률 매트릭스 ──
   const rows1 = [['팀', ...monthly.map(x=>`${x.month}월`)]];
-  rows1.push(['전체', ...monthly.map(x=>rateOf(x.totalLeave, x.totalActive))]);
+  rows1.push(['전체', ...monthly.map(x=>rateOfPct(x.totalLeave, x.totalActive))]);
   allTeams.forEach(t=>{
     rows1.push([t, ...monthly.map(x=>{
       const d = x.perTeam[t] || {active:0, leave:0};
-      return rateOf(d.leave, d.active);
+      return rateOfPct(d.leave, d.active);
     })]);
   });
   rows1.push([]);
