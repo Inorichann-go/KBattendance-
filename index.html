@@ -1723,6 +1723,7 @@
       <span id="resign-count" style="font-size:13px;color:var(--text2);margin-left:4px;"></span>
       <button onclick="openResignCaution()" style="background:none;border:none;cursor:pointer;padding:2px 4px;color:#cc6000;vertical-align:middle;" title="퇴사 처리 주의사항"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></button>
       <button class="btn-add admin-only" onclick="openQuickResignModal()" style="font-size:12px;">＋ 퇴사 추가</button>
+      <button class="btn" onclick="generateResignRateExcel()" style="font-size:12px;" title="연도 필터 기준, 1월~현재(또는 12월)까지 팀별·월별 퇴직률을 엑셀로 내려받습니다"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> 팀별 퇴직률 엑셀</button>
       <button class="btn admin-only" onclick="openResignReasonMgr()" style="font-size:12px;margin-left:auto;">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         퇴사사유 관리
@@ -5403,6 +5404,82 @@ function renderResignTable() {
     const editBtn = isAdminMode() ? `<td style="text-align:center;"><button class="btn" onclick="openResignModal(${empIdx})" style="padding:4px 6px;font-size:11px;" title="퇴사정보 수정"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></td>` : '<td></td>';
     return `<tr><td>${i+1}</td><td style="font-weight:700;">${e.name}</td><td style="font-size:11px;color:var(--text2);">${e.empId||'-'}</td><td>${getTeamBadge(e.team,'font-size:10px;')}</td><td style="font-size:12px;">${e.joinDate||'-'}</td><td style="font-size:12px;color:var(--danger);">${e.leaveDate}</td><td style="font-size:12px;">${tenure}</td><td style="font-size:12px;"><span style="background:var(--surface2);padding:2px 8px;border-radius:12px;border:1px solid var(--border);">${info.reason||'-'}</span></td>${severanceCell}<td style="font-size:12px;color:var(--text2);">${info.memo||'-'}</td>${editBtn}</tr>`;
   }).join('') || '<tr><td colspan="11" style="text-align:center;color:var(--text3);padding:30px;">해당 기간 퇴사자 없음</td></tr>';
+}
+
+/* 팀별·월별 퇴직률 엑셀 (퇴사 현황 탭 상단 연도 필터 기준, 1월~해당 연도의 마지막 반영월까지) */
+function generateResignRateExcel(){
+  const yearSel = document.getElementById('resign-year')?.value;
+  const year = yearSel ? parseInt(yearSel) : new Date().getFullYear();
+  const now = new Date();
+  const endMonth = (year === now.getFullYear()) ? (now.getMonth()+1) : 12;
+  const pad = n => String(n).padStart(2,'0');
+
+  const monthly = [];
+  for(let m=1; m<=endMonth; m++){
+    const ym1 = `${year}-${pad(m)}-01`;
+    const lastDay = new Date(year, m, 0).getDate();
+    const ym2 = `${year}-${pad(m)}-${pad(lastDay)}`;
+    const perTeam = {};
+    let totalActive=0, totalLeave=0;
+    employees.forEach(e=>{
+      const team = e.team || '(팀 미지정)';
+      if(!perTeam[team]) perTeam[team] = {active:0, leave:0};
+      // 월초(전월말 기준) 재직 여부: 입사일이 이번달 시작 전이고, 퇴사일이 없거나 이번달 시작 이후
+      const joinedBefore = e.joinDate && e.joinDate < ym1;
+      const stillActive = !e.leaveDate || e.leaveDate >= ym1;
+      if(joinedBefore && stillActive){ perTeam[team].active++; totalActive++; }
+      if(e.leaveDate && e.leaveDate>=ym1 && e.leaveDate<=ym2){ perTeam[team].leave++; totalLeave++; }
+    });
+    monthly.push({ month:m, ym1, ym2, perTeam, totalActive, totalLeave });
+  }
+
+  const allTeams = [...new Set(monthly.flatMap(x=>Object.keys(x.perTeam)))].sort();
+  const rateOf = (leave, active) => active>0 ? Number((leave/active*100).toFixed(1)) : (leave>0 ? 'N/A(월초재직0)' : 0);
+
+  // ── Sheet 1: 팀별 월별 퇴직률 매트릭스 ──
+  const rows1 = [['팀', ...monthly.map(x=>`${x.month}월`)]];
+  rows1.push(['전체', ...monthly.map(x=>rateOf(x.totalLeave, x.totalActive))]);
+  allTeams.forEach(t=>{
+    rows1.push([t, ...monthly.map(x=>{
+      const d = x.perTeam[t] || {active:0, leave:0};
+      return rateOf(d.leave, d.active);
+    })]);
+  });
+  rows1.push([]);
+  rows1.push([`* 퇴직률(%) = 해당 월 퇴사자수 ÷ 월초(전월말 기준) 재직인원 × 100`]);
+  rows1.push([`* 기준기간: ${year}년 1월 ~ ${endMonth}월`]);
+
+  // ── Sheet 2: 상세(월/팀/월초재직인원/퇴사자수/퇴직률) ──
+  const rows2 = [['연도','월','팀','월초 재직인원','퇴사자수','퇴직률(%)']];
+  monthly.forEach(x=>{
+    rows2.push([year, x.month, '전체', x.totalActive, x.totalLeave, rateOf(x.totalLeave, x.totalActive)]);
+    allTeams.forEach(t=>{
+      const d = x.perTeam[t] || {active:0, leave:0};
+      rows2.push([year, x.month, t, d.active, d.leave, rateOf(d.leave, d.active)]);
+    });
+  });
+
+  // ── Sheet 3: 기간 내 퇴사자 명단 ──
+  const rangeStart = `${year}-01-01`;
+  const rangeEnd = monthly.length ? monthly[monthly.length-1].ym2 : `${year}-12-31`;
+  const resignList = employees.filter(e=>e.leaveDate && e.leaveDate>=rangeStart && e.leaveDate<=rangeEnd)
+    .sort((a,b)=>a.leaveDate.localeCompare(b.leaveDate));
+  const rows3 = [['퇴사일','이름','사번','팀','입사일','근속(개월)','사유']];
+  resignList.forEach(e=>{
+    rows3.push([e.leaveDate, e.name, e.empId||'', e.team||'', e.joinDate||'', calcTenure(e), (e.resignInfo&&e.resignInfo.reason)||'']);
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws1 = XLSX.utils.aoa_to_sheet(rows1);
+  ws1['!cols'] = [{wch:16}, ...monthly.map(()=>({wch:8}))];
+  XLSX.utils.book_append_sheet(wb, ws1, '팀별월별퇴직률');
+  const ws2 = XLSX.utils.aoa_to_sheet(rows2);
+  ws2['!cols'] = [{wch:8},{wch:6},{wch:16},{wch:14},{wch:10},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, ws2, '상세');
+  const ws3 = XLSX.utils.aoa_to_sheet(rows3);
+  ws3['!cols'] = [{wch:11},{wch:10},{wch:11},{wch:16},{wch:11},{wch:10},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, ws3, '퇴사자명단');
+  XLSX.writeFile(wb, `${year}년_팀별월별퇴직률_01-${pad(endMonth)}.xlsx`);
 }
 
 let _pasteRows = []; // 파싱된 행 [{date,name,team,att,memo,status,year,month,day}]
