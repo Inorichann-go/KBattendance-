@@ -5424,17 +5424,17 @@ function generateResignRateExcel(){
     employees.forEach(e=>{
       const team = e.team || '(팀 미지정)';
       if(!perTeam[team]) perTeam[team] = {active:0, leave:0};
-      // 월초(전월말 기준) 재직 여부: 입사일이 이번달 시작 전이고, 퇴사일이 없거나 이번달 시작 이후
-      const joinedBefore = e.joinDate && e.joinDate < ym1;
-      const stillActive = !e.leaveDate || e.leaveDate >= ym1;
-      if(joinedBefore && stillActive){ perTeam[team].active++; totalActive++; }
+      // 당월 전체인원: 이번달 말일 이전에 입사했고, 이번달 시작 이전에 퇴사하지 않은 사람(월중 입사·퇴사자 포함)
+      const joinedByMonthEnd = e.joinDate && e.joinDate <= ym2;
+      const notLeftBeforeMonth = !e.leaveDate || e.leaveDate >= ym1;
+      if(joinedByMonthEnd && notLeftBeforeMonth){ perTeam[team].active++; totalActive++; }
       if(e.leaveDate && e.leaveDate>=ym1 && e.leaveDate<=ym2){ perTeam[team].leave++; totalLeave++; }
     });
     monthly.push({ month:m, ym1, ym2, perTeam, totalActive, totalLeave });
   }
 
   const allTeams = [...new Set(monthly.flatMap(x=>Object.keys(x.perTeam)))].sort();
-  const rateOf = (leave, active) => active>0 ? Number((leave/active*100).toFixed(1)) : (leave>0 ? 'N/A(월초재직0)' : 0);
+  const rateOf = (leave, active) => active>0 ? Number((leave/active*100).toFixed(1)) : (leave>0 ? 'N/A(당월인원0)' : 0);
   const rateOfPct = (leave, active) => {
     const r = rateOf(leave, active);
     return typeof r === 'number' ? `${r}%` : r;
@@ -5450,11 +5450,11 @@ function generateResignRateExcel(){
     })]);
   });
   rows1.push([]);
-  rows1.push([`* 퇴직률(%) = 해당 월 퇴사자수 ÷ 월초(전월말 기준) 재직인원 × 100`]);
+  rows1.push([`* 퇴직률(%) = 해당 월 퇴사자수 ÷ 당월 전체인원(월중 입사·퇴사자 포함) × 100`]);
   rows1.push([`* 기준기간: ${year}년 1월 ~ ${endMonth}월`]);
 
   // ── Sheet 2: 상세(월/팀/월초재직인원/퇴사자수/퇴직률) ──
-  const rows2 = [['연도','월','팀','월초 재직인원','퇴사자수','퇴직률(%)']];
+  const rows2 = [['연도','월','팀','당월 전체인원','퇴사자수','퇴직률(%)']];
   monthly.forEach(x=>{
     rows2.push([year, x.month, '전체', x.totalActive, x.totalLeave, rateOf(x.totalLeave, x.totalActive)]);
     allTeams.forEach(t=>{
