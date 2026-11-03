@@ -8358,8 +8358,12 @@ function buildCertCard(emp, year, refType='today', refYear=null) {
   const baseDate  = emp.transferDate || emp.joinDate;
 
   // ── 연차/반차 상세 사용 내역 수집 ──
+  // annualList/halfList: 입사일부터 오늘까지 전체 이력(상세 내역 표에 표시)
+  // annualListPeriod/halfListPeriod: 현재 연차 정산기간만(상단 "사용 연차" 요약 — lv와 동일한 기준으로 집계)
   const annualList = [];
   const halfList   = [];
+  const annualListPeriod = [];
+  const halfListPeriod   = [];
   const absentList = [];
 
   // 2년 미만자 여부 판단
@@ -8371,9 +8375,10 @@ function buildCertCard(emp, year, refType='today', refYear=null) {
   // 2주년 미도래 = 1년차 유지 = 결근 내역 표시 대상
   const is1YrUnder = isUnder2yr;
 
-  // 사용 내역 수집 범위
-  const collectStartYear = isUnder2yr ? baseD2.getFullYear() : calcYear;
+  // 상세 내역은 입사일부터 전체 수집, 요약 집계 시작 연도는 기존처럼 정산기간 기준(2년 이상자는 올해부터)
+  const collectStartYear = baseD2.getFullYear();
   const collectEndYear   = calcYear;
+  const periodStartYear  = isUnder2yr ? baseD2.getFullYear() : calcYear;
 
   for (let y = collectStartYear; y <= collectEndYear; y++) {
     for (let m = 1; m <= 12; m++) {
@@ -8394,14 +8399,21 @@ function buildCertCard(emp, year, refType='today', refYear=null) {
         const dateStr = `${y}.${String(m).padStart(2,'0')}.${String(d).padStart(2,'0')}`;
         const dayNames = ['일','월','화','수','목','금','토'];
         const dow = dayNames[new Date(y,m-1,d).getDay()];
-        if (v === '연차') annualList.push({ dateStr, dow, hrs, memo });
-        else if (v === '반차') halfList.push({ dateStr, dow, hrs: hrs/2, memo });
-        else if (v === '결근' && is1YrUnder) absentList.push({ dateStr, dow, memo });
+        const inPeriod = y >= periodStartYear;
+        if (v === '연차') {
+          annualList.push({ dateStr, dow, hrs, memo });
+          if (inPeriod) annualListPeriod.push({ dateStr, dow, hrs, memo });
+        } else if (v === '반차') {
+          halfList.push({ dateStr, dow, hrs: hrs/2, memo });
+          if (inPeriod) halfListPeriod.push({ dateStr, dow, hrs: hrs/2, memo });
+        } else if (v === '결근' && is1YrUnder) {
+          absentList.push({ dateStr, dow, memo });
+        }
       }
     }
   }
 
-  const totalUsedH = annualList.reduce((s,x)=>s+x.hrs,0) + halfList.reduce((s,x)=>s+x.hrs,0);
+  const totalUsedH = annualListPeriod.reduce((s,x)=>s+x.hrs,0) + halfListPeriod.reduce((s,x)=>s+x.hrs,0);
 
   // ── 기본 정보 행 ──
   const infoRows = [
@@ -8420,7 +8432,7 @@ function buildCertCard(emp, year, refType='today', refYear=null) {
 
   // ── 연차 현황 행 ──
   const lvGranted  = lv ? `${lv.granted}일 (${lv.grantedHours}h) · ${lv.grantType}` : '-';
-  const lvUsed     = lv ? `${lv.totalUsed}일 (${totalUsedH}h) · 연차 ${annualList.length}회 / 반차 ${halfList.length}회` : '-';
+  const lvUsed     = lv ? `${lv.totalUsed}일 (${totalUsedH}h) · 연차 ${annualListPeriod.length}회 / 반차 ${halfListPeriod.length}회` : '-';
   const lvRemain   = lv ? (lv.isOver ? `${Math.abs(lv.remain)}일 (${Math.abs(lv.remainHours)}h) 초과사용` : `${lv.remain}일 (${lv.remainHours}h)`) : '-';
   const isLow      = lv && (lv.isOver || (lv.remain <= 3 && lv.granted > 0));
 
@@ -8537,7 +8549,7 @@ function buildCertCard(emp, year, refType='today', refYear=null) {
       </div>
       <!-- 상세 사용 내역 -->
       <div style="padding:14px 24px 18px;">
-        <div style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.5px;margin-bottom:4px;">상세 사용 내역</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.5px;margin-bottom:4px;">상세 사용 내역 <span style="font-weight:400;color:var(--text3);">(${baseLabel} ~ 오늘 전체 이력)</span></div>
         ${detailTable('연차', '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>', annualList, false)}
         ${detailTable('반차', '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>', halfList, true)}
         ${is1YrUnder ? absentTable(absentList) : ''}
