@@ -8400,10 +8400,10 @@ function buildCertCard(emp, year, refType='today', refYear=null) {
         // 비례연차 대상자는 정산(요약) 집계만 2주년 이후로 제한 — 상세 전체 이력(annualList/halfList)은 계속 입사일부터 전부 포함
         const inPeriod = (lv && lv.isProportional) ? (cur >= anniv2forCert) : (y >= periodStartYear);
         if (v === '연차') {
-          annualList.push({ dateStr, dow, hrs, memo });
+          annualList.push({ dateStr, dow, hrs, memo, period: inPeriod });
           if (inPeriod) annualListPeriod.push({ dateStr, dow, hrs, memo });
         } else if (v === '반차') {
-          halfList.push({ dateStr, dow, hrs: hrs/2, memo });
+          halfList.push({ dateStr, dow, hrs: hrs/2, memo, period: inPeriod });
           if (inPeriod) halfListPeriod.push({ dateStr, dow, hrs: hrs/2, memo });
         } else if (v === '결근' && is1YrUnder) {
           absentList.push({ dateStr, dow, memo });
@@ -8471,18 +8471,14 @@ function buildCertCard(emp, year, refType='today', refYear=null) {
   // ── 상세 내역 테이블 ──
   function detailTable(title, icon, list, isHalf) {
     if (!list.length) return `<div style="font-size:12px;color:var(--text3);padding:6px 0;">${icon} ${title} 사용 내역이 없습니다.</div>`;
-    const rows = list.map(x => `
+    const rowsHtml = arr => arr.map(x => `
       <tr style="border-bottom:1px solid var(--border);">
         <td style="padding:7px 12px;font-size:12px;font-weight:600;">${x.dateStr}</td>
         <td style="padding:7px 12px;font-size:12px;color:var(--text2);">${x.dow}요일</td>
         <td style="padding:7px 12px;font-size:12px;text-align:center;font-weight:700;color:var(--accent);">${x.hrs}h</td>
         <td style="padding:7px 12px;font-size:12px;color:var(--text2);">${x.memo||''}</td>
       </tr>`).join('');
-    const total = list.reduce((s,x)=>s+x.hrs,0);
-    return `
-      <div style="font-size:12px;font-weight:700;color:var(--text);margin:14px 0 6px;display:flex;align-items:center;gap:6px;">
-        ${icon} ${title} <span style="font-size:11px;font-weight:400;color:var(--text3)">(${list.length}회 · ${total}h)</span>
-      </div>
+    const tableHtml = arr => arr.length ? `
       <table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
         <thead>
           <tr style="background:var(--surface2);">
@@ -8492,8 +8488,31 @@ function buildCertCard(emp, year, refType='today', refYear=null) {
             <th style="padding:7px 12px;text-align:left;font-size:11px;color:var(--text2);font-weight:700;border-bottom:2px solid var(--border);">메모</th>
           </tr>
         </thead>
-        <tbody>${rows}</tbody>
-      </table>`;
+        <tbody>${rowsHtml(arr)}</tbody>
+      </table>` : `<div style="font-size:12px;color:var(--text3);padding:4px 0 2px;">내역 없음</div>`;
+
+    const curList  = list.filter(x => x.period);
+    const pastList = list.filter(x => !x.period);
+    const total = list.reduce((s,x)=>s+x.hrs,0);
+    const curTotal = curList.reduce((s,x)=>s+x.hrs,0);
+    const pastTotal = pastList.reduce((s,x)=>s+x.hrs,0);
+
+    // 현재 정산기간과 과거 기간이 섞여있는 경우(비례연차 발생 등)에만 구분 표시
+    if (!pastList.length) {
+      return `
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin:14px 0 6px;display:flex;align-items:center;gap:6px;">
+        ${icon} ${title} <span style="font-size:11px;font-weight:400;color:var(--text3)">(${list.length}회 · ${total}h)</span>
+      </div>
+      ${tableHtml(curList)}`;
+    }
+    return `
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin:14px 0 6px;display:flex;align-items:center;gap:6px;">
+        ${icon} ${title} <span style="font-size:11px;font-weight:400;color:var(--text3)">(전체 ${list.length}회 · ${total}h)</span>
+      </div>
+      <div style="font-size:11px;font-weight:700;color:var(--accent);margin:4px 0 4px;">· 현재 발생 연차분 사용 내역 <span style="font-weight:400;color:var(--text3)">(${curList.length}회 · ${curTotal}h)</span></div>
+      ${tableHtml(curList)}
+      <div style="font-size:11px;font-weight:700;color:var(--text3);margin:10px 0 4px;">· 이전 발생 연차분 사용 내역 <span style="font-weight:400;color:var(--text3)">(참고용, ${pastList.length}회 · ${pastTotal}h)</span></div>
+      ${tableHtml(pastList)}`;
   }
 
   function absentTable(list) {
