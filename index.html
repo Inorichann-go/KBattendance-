@@ -8389,8 +8389,6 @@ function buildCertCard(emp, year, refType='today', refYear=null) {
         if (cur < baseD2) continue;
         // 오늘 이후 스킵
         if (cur > todayCert) break;
-        // 비례연차 대상자는 2주년 이후만
-        if (lv && lv.isProportional && cur < anniv2forCert) continue;
 
         const v = getAtt(emp.name, y, m, d);
         const memo = getAttMemo(emp.name, y, m, d);
@@ -8399,7 +8397,8 @@ function buildCertCard(emp, year, refType='today', refYear=null) {
         const dateStr = `${y}.${String(m).padStart(2,'0')}.${String(d).padStart(2,'0')}`;
         const dayNames = ['일','월','화','수','목','금','토'];
         const dow = dayNames[new Date(y,m-1,d).getDay()];
-        const inPeriod = y >= periodStartYear;
+        // 비례연차 대상자는 정산(요약) 집계만 2주년 이후로 제한 — 상세 전체 이력(annualList/halfList)은 계속 입사일부터 전부 포함
+        const inPeriod = (lv && lv.isProportional) ? (cur >= anniv2forCert) : (y >= periodStartYear);
         if (v === '연차') {
           annualList.push({ dateStr, dow, hrs, memo });
           if (inPeriod) annualListPeriod.push({ dateStr, dow, hrs, memo });
