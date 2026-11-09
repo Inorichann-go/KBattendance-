@@ -2475,6 +2475,11 @@
       <h3 style="margin:0;">연차 확인서</h3>
       <button class="btn" onclick="closeModal('cert-popup-modal')" style="padding:4px 10px;font-size:18px;line-height:1;">×</button>
     </div>
+    <div style="padding:14px 20px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <label style="font-size:12px;font-weight:700;color:var(--text2);">조회 기준</label>
+      <select id="cert-popup-ref-type" onchange="refreshCertPopup()" style="padding:5px 8px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--surface);"></select>
+      <select id="cert-popup-ref-year" onchange="refreshCertPopup()" style="display:none;padding:5px 8px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--surface);"></select>
+    </div>
     <div id="cert-popup-content" style="padding:20px;"></div>
   </div>
 </div>
@@ -7554,27 +7559,61 @@ function updateCertRefOptions(emp) {
     sel.value === 'fiscal' ? '' : 'none';
 }
 
+let certPopupEmpName = null;
+
 function openCertPopup(name) {
-  var temps = [];
-  function ensure(id, tag) {
-    if (!document.getElementById(id)) {
-      var el = document.createElement(tag || 'input');
-      el.id = id; el.style.display = 'none';
-      document.body.appendChild(el); temps.push(el);
-    }
-  }
-  ensure('cert-search');
-  ensure('cert-ref-type', 'select');
-  ensure('cert-ref-year', 'select');
-  ensure('cert-wrap', 'div');
-  var refType = document.getElementById('cert-ref-type');
-  if (refType && !refType.options.length) refType.innerHTML = '<option value="today">현재 기준 (오늘)</option>';
-  document.getElementById('cert-search').value = name;
-  renderCert();
-  var certWrap = document.getElementById('cert-wrap');
-  document.getElementById('cert-popup-content').innerHTML = certWrap ? certWrap.innerHTML : '';
-  temps.forEach(function(el) { document.body.removeChild(el); });
+  const emp = employees.find(e => e.name === name);
+  if (!emp) return;
+  certPopupEmpName = name;
+  updateCertPopupRefOptions(emp);
+  refreshCertPopup();
   document.getElementById('cert-popup-modal').classList.add('show');
+}
+
+// 직원 근속에 따라 조회 가능한 "조회 기준" 옵션 구성 (오늘 / 1→2년차 정산 / 비례연차 정산 / 회계연도별 정산)
+function updateCertPopupRefOptions(emp) {
+  const sel  = document.getElementById('cert-popup-ref-type');
+  const ysel = document.getElementById('cert-popup-ref-year');
+  const today = new Date(); today.setHours(0,0,0,0);
+  const baseD = new Date((emp.transferDate || emp.joinDate).replace(/-/g,'/'));
+  const anniv1 = new Date(baseD); anniv1.setFullYear(baseD.getFullYear()+1);
+  const anniv2 = new Date(baseD); anniv2.setFullYear(baseD.getFullYear()+2);
+  const anniv2Year = anniv2.getFullYear();
+  const has1yr = anniv1 <= today;
+  const has2yr = anniv2 <= today;
+
+  sel.innerHTML = '';
+  sel.add(new Option('현재 기준 (오늘)', 'today'));
+
+  if (has1yr) {
+    const prev = new Date(anniv2); prev.setDate(prev.getDate()-1);
+    sel.add(new Option(`2년차 정산 기준 (${prev.toISOString().slice(0,10)})`, 'anniv2'));
+  }
+
+  if (has2yr) {
+    sel.add(new Option(`비례연차 정산 기준 (${anniv2Year}-12-31)`, 'proportional'));
+    sel.add(new Option('회계연도 정산 기준', 'fiscal'));
+
+    const nowY = new Date().getFullYear();
+    ysel.innerHTML = '';
+    for (let y = anniv2Year; y <= nowY; y++) {
+      ysel.add(new Option(y+'년', y));
+    }
+    ysel.value = String(nowY);
+  }
+
+  sel.value = 'today';
+  ysel.style.display = 'none';
+}
+
+// 조회 기준 선택이 바뀔 때마다 연차확인서 카드를 다시 그린다
+function refreshCertPopup() {
+  const emp = employees.find(e => e.name === certPopupEmpName);
+  if (!emp) return;
+  const refType = document.getElementById('cert-popup-ref-type')?.value || 'today';
+  const refYear = parseInt(document.getElementById('cert-popup-ref-year')?.value) || new Date().getFullYear();
+  document.getElementById('cert-popup-ref-year').style.display = refType === 'fiscal' ? '' : 'none';
+  document.getElementById('cert-popup-content').innerHTML = buildCertCard(emp, new Date().getFullYear(), refType, refYear);
 }
 
 // ── 주의사항 시스템 ──
@@ -8358,12 +8397,10 @@ function buildCertCard(emp, year, refType='today', refYear=null) {
   const baseDate  = emp.transferDate || emp.joinDate;
 
   // ── 연차/반차 상세 사용 내역 수집 ──
-  // annualList/halfList: 입사일부터 오늘까지 전체 이력(상세 내역 표에 표시)
-  // annualListPeriod/halfListPeriod: 현재 연차 정산기간만(상단 "사용 연차" 요약 — lv와 동일한 기준으로 집계)
+  // 현재 조회 중인 연차 정산기간(= 상단 "사용 연차" 요약, lv와 동일한 기준)만 수집.
+  // 다른 기간을 보려면 팝업 상단의 "조회 기준" 선택으로 전환해서 다시 조회한다.
   const annualList = [];
   const halfList   = [];
-  const annualListPeriod = [];
-  const halfListPeriod   = [];
   const absentList = [];
 
   // 2년 미만자 여부 판단
@@ -8375,10 +8412,10 @@ function buildCertCard(emp, year, refType='today', refYear=null) {
   // 2주년 미도래 = 1년차 유지 = 결근 내역 표시 대상
   const is1YrUnder = isUnder2yr;
 
-  // 상세 내역은 입사일부터 전체 수집, 요약 집계 시작 연도는 기존처럼 정산기간 기준(2년 이상자는 올해부터)
-  const collectStartYear = baseD2.getFullYear();
-  const collectEndYear   = calcYear;
+  // 정산기간 시작연도: 2년 미만자는 입사연도부터, 2년 이상자는 조회 대상 연도부터
   const periodStartYear  = isUnder2yr ? baseD2.getFullYear() : calcYear;
+  const collectStartYear = periodStartYear;
+  const collectEndYear   = calcYear;
 
   for (let y = collectStartYear; y <= collectEndYear; y++) {
     for (let m = 1; m <= 12; m++) {
@@ -8389,6 +8426,8 @@ function buildCertCard(emp, year, refType='today', refYear=null) {
         if (cur < baseD2) continue;
         // 오늘 이후 스킵
         if (cur > todayCert) break;
+        // 비례연차 대상자는 2주년 이후만
+        if (lv && lv.isProportional && cur < anniv2forCert) continue;
 
         const v = getAtt(emp.name, y, m, d);
         const memo = getAttMemo(emp.name, y, m, d);
@@ -8397,14 +8436,10 @@ function buildCertCard(emp, year, refType='today', refYear=null) {
         const dateStr = `${y}.${String(m).padStart(2,'0')}.${String(d).padStart(2,'0')}`;
         const dayNames = ['일','월','화','수','목','금','토'];
         const dow = dayNames[new Date(y,m-1,d).getDay()];
-        // 비례연차 대상자는 정산(요약) 집계만 2주년 이후로 제한 — 상세 전체 이력(annualList/halfList)은 계속 입사일부터 전부 포함
-        const inPeriod = (lv && lv.isProportional) ? (cur >= anniv2forCert) : (y >= periodStartYear);
         if (v === '연차') {
-          annualList.push({ dateStr, dow, hrs, memo, period: inPeriod });
-          if (inPeriod) annualListPeriod.push({ dateStr, dow, hrs, memo });
+          annualList.push({ dateStr, dow, hrs, memo });
         } else if (v === '반차') {
-          halfList.push({ dateStr, dow, hrs: hrs/2, memo, period: inPeriod });
-          if (inPeriod) halfListPeriod.push({ dateStr, dow, hrs: hrs/2, memo });
+          halfList.push({ dateStr, dow, hrs: hrs/2, memo });
         } else if (v === '결근' && is1YrUnder) {
           absentList.push({ dateStr, dow, memo });
         }
@@ -8412,7 +8447,7 @@ function buildCertCard(emp, year, refType='today', refYear=null) {
     }
   }
 
-  const totalUsedH = annualListPeriod.reduce((s,x)=>s+x.hrs,0) + halfListPeriod.reduce((s,x)=>s+x.hrs,0);
+  const totalUsedH = annualList.reduce((s,x)=>s+x.hrs,0) + halfList.reduce((s,x)=>s+x.hrs,0);
 
   // ── 기본 정보 행 ──
   const infoRows = [
@@ -8431,7 +8466,7 @@ function buildCertCard(emp, year, refType='today', refYear=null) {
 
   // ── 연차 현황 행 ──
   const lvGranted  = lv ? `${lv.granted}일 (${lv.grantedHours}h) · ${lv.grantType}` : '-';
-  const lvUsed     = lv ? `${lv.totalUsed}일 (${totalUsedH}h) · 연차 ${annualListPeriod.length}회 / 반차 ${halfListPeriod.length}회` : '-';
+  const lvUsed     = lv ? `${lv.totalUsed}일 (${totalUsedH}h) · 연차 ${annualList.length}회 / 반차 ${halfList.length}회` : '-';
   const lvRemain   = lv ? (lv.isOver ? `${Math.abs(lv.remain)}일 (${Math.abs(lv.remainHours)}h) 초과사용` : `${lv.remain}일 (${lv.remainHours}h)`) : '-';
   const isLow      = lv && (lv.isOver || (lv.remain <= 3 && lv.granted > 0));
 
@@ -8471,14 +8506,18 @@ function buildCertCard(emp, year, refType='today', refYear=null) {
   // ── 상세 내역 테이블 ──
   function detailTable(title, icon, list, isHalf) {
     if (!list.length) return `<div style="font-size:12px;color:var(--text3);padding:6px 0;">${icon} ${title} 사용 내역이 없습니다.</div>`;
-    const rowsHtml = arr => arr.map(x => `
+    const rows = list.map(x => `
       <tr style="border-bottom:1px solid var(--border);">
         <td style="padding:7px 12px;font-size:12px;font-weight:600;">${x.dateStr}</td>
         <td style="padding:7px 12px;font-size:12px;color:var(--text2);">${x.dow}요일</td>
         <td style="padding:7px 12px;font-size:12px;text-align:center;font-weight:700;color:var(--accent);">${x.hrs}h</td>
         <td style="padding:7px 12px;font-size:12px;color:var(--text2);">${x.memo||''}</td>
       </tr>`).join('');
-    const tableHtml = arr => arr.length ? `
+    const total = list.reduce((s,x)=>s+x.hrs,0);
+    return `
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin:14px 0 6px;display:flex;align-items:center;gap:6px;">
+        ${icon} ${title} <span style="font-size:11px;font-weight:400;color:var(--text3)">(${list.length}회 · ${total}h)</span>
+      </div>
       <table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
         <thead>
           <tr style="background:var(--surface2);">
@@ -8488,31 +8527,8 @@ function buildCertCard(emp, year, refType='today', refYear=null) {
             <th style="padding:7px 12px;text-align:left;font-size:11px;color:var(--text2);font-weight:700;border-bottom:2px solid var(--border);">메모</th>
           </tr>
         </thead>
-        <tbody>${rowsHtml(arr)}</tbody>
-      </table>` : `<div style="font-size:12px;color:var(--text3);padding:4px 0 2px;">내역 없음</div>`;
-
-    const curList  = list.filter(x => x.period);
-    const pastList = list.filter(x => !x.period);
-    const total = list.reduce((s,x)=>s+x.hrs,0);
-    const curTotal = curList.reduce((s,x)=>s+x.hrs,0);
-    const pastTotal = pastList.reduce((s,x)=>s+x.hrs,0);
-
-    // 현재 정산기간과 과거 기간이 섞여있는 경우(비례연차 발생 등)에만 구분 표시
-    if (!pastList.length) {
-      return `
-      <div style="font-size:12px;font-weight:700;color:var(--text);margin:14px 0 6px;display:flex;align-items:center;gap:6px;">
-        ${icon} ${title} <span style="font-size:11px;font-weight:400;color:var(--text3)">(${list.length}회 · ${total}h)</span>
-      </div>
-      ${tableHtml(curList)}`;
-    }
-    return `
-      <div style="font-size:12px;font-weight:700;color:var(--text);margin:14px 0 6px;display:flex;align-items:center;gap:6px;">
-        ${icon} ${title} <span style="font-size:11px;font-weight:400;color:var(--text3)">(전체 ${list.length}회 · ${total}h)</span>
-      </div>
-      <div style="font-size:11px;font-weight:700;color:var(--accent);margin:4px 0 4px;">· 현재 발생 연차분 사용 내역 <span style="font-weight:400;color:var(--text3)">(${curList.length}회 · ${curTotal}h)</span></div>
-      ${tableHtml(curList)}
-      <div style="font-size:11px;font-weight:700;color:var(--text3);margin:10px 0 4px;">· 이전 발생 연차분 사용 내역 <span style="font-weight:400;color:var(--text3)">(참고용, ${pastList.length}회 · ${pastTotal}h)</span></div>
-      ${tableHtml(pastList)}`;
+        <tbody>${rows}</tbody>
+      </table>`;
   }
 
   function absentTable(list) {
@@ -8560,14 +8576,14 @@ function buildCertCard(emp, year, refType='today', refYear=null) {
       </div>
       <!-- 연차 현황 -->
       <div style="padding:14px 24px 0;">
-        <div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.5px;margin-bottom:6px;">연차 현황 (${year}년)</div>
+        <div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.5px;margin-bottom:6px;">연차 현황 (${calcYear}년)</div>
         <table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
           <tbody>${leaveRows}</tbody>
         </table>
       </div>
       <!-- 상세 사용 내역 -->
       <div style="padding:14px 24px 18px;">
-        <div style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.5px;margin-bottom:4px;">상세 사용 내역 <span style="font-weight:400;color:var(--text3);">(${baseLabel} ~ 오늘 전체 이력)</span></div>
+        <div style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.5px;margin-bottom:4px;">상세 사용 내역 <span style="font-weight:400;color:var(--text3);">(현재 조회 중인 정산기간 기준 · 다른 기간은 상단 "조회 기준"에서 선택)</span></div>
         ${detailTable('연차', '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>', annualList, false)}
         ${detailTable('반차', '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;flex-shrink:0"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>', halfList, true)}
         ${is1YrUnder ? absentTable(absentList) : ''}
