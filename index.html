@@ -983,23 +983,6 @@
   </div>
   <div class="pagination" id="sum-pages"></div>
 </div>
-<!-- 직원 상세보기 팝업 (읽기전용) -->
-<div class="modal-overlay" id="emp-detail-modal">
-  <div class="modal" style="width:520px;max-height:85vh;display:flex;flex-direction:column;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-shrink:0;">
-      <h3 style="margin:0;" id="emp-detail-name"></h3>
-      <button class="btn" onclick="closeModal('emp-detail-modal')" style="padding:4px 10px;font-size:20px;line-height:1;">×</button>
-    </div>
-    <div id="emp-detail-content" style="overflow-y:auto;flex:1;"></div>
-    <div class="modal-btns" style="margin-top:14px;flex-shrink:0;">
-      <button class="btn admin-only" id="emp-detail-edit-btn" style="font-size:12px;">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        입사현황에서 수정
-      </button>
-      <button class="btn-save" onclick="closeModal('emp-detail-modal')">닫기</button>
-    </div>
-  </div>
-</div>
 
 <!-- 근태 입력 모달 -->
 <div class="modal-overlay" id="att-modal">
@@ -1051,6 +1034,24 @@
       </table>
     </div>
   </div>
+  </div>
+</div>
+
+<!-- 직원 상세보기 팝업 (읽기전용) — 어느 탭에서나 열 수 있도록 패널 밖(최상위)에 위치 -->
+<div class="modal-overlay" id="emp-detail-modal">
+  <div class="modal" style="width:520px;max-height:85vh;display:flex;flex-direction:column;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-shrink:0;">
+      <h3 style="margin:0;" id="emp-detail-name"></h3>
+      <button class="btn" onclick="closeModal('emp-detail-modal')" style="padding:4px 10px;font-size:20px;line-height:1;">×</button>
+    </div>
+    <div id="emp-detail-content" style="overflow-y:auto;flex:1;"></div>
+    <div class="modal-btns" style="margin-top:14px;flex-shrink:0;">
+      <button class="btn admin-only" id="emp-detail-edit-btn" style="font-size:12px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        입사현황에서 수정
+      </button>
+      <button class="btn-save" onclick="closeModal('emp-detail-modal')">닫기</button>
+    </div>
   </div>
 </div>
 
