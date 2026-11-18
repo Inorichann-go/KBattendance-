@@ -2489,7 +2489,7 @@
 <div class="eval-modal-overlay hidden" id="evalReducedHoursModalOverlay">
   <div class="eval-modal" style="width:380px;">
     <h2>👶 육아단축자 명단</h2>
-    <p style="font-size:11px;color:var(--text-soft);margin:-8px 0 12px;">근태상세 &gt; 육아단축 탭의 이력에서, 이 주차 기준일에 육아단축 중인 사람만 자동으로 가져와요. 여기 뜬 사람은 CPD·Call Time 실적이 자동으로 2배 보정돼요. 명단을 바꾸려면 근태상세 &gt; 육아단축 탭에서 이력을 수정해주세요.</p>
+    <p style="font-size:11px;color:var(--text-soft);margin:-8px 0 12px;">근태상세 &gt; 육아단축 탭의 이력에서, 이 주차 기준일에 육아단축 중인 장기사고 팀 인원만 자동으로 가져와요(그 외 팀은 보정이 필요 없어 제외). 여기 뜬 사람은 CPD·Call Time 실적이 자동으로 2배 보정돼요. 명단을 바꾸려면 근태상세 &gt; 육아단축 탭에서 이력을 수정해주세요.</p>
     <div id="evalReducedHoursModalBody"></div>
     <div class="modal-actions" style="justify-content:flex-end;">
       <button type="button" class="btn-secondary" onclick="closeEvalReducedHoursModal()">닫기</button>
@@ -9433,11 +9433,14 @@ function selectEvalWeek(key){
   renderEvalRefresh();
 }
 
-/* ---- 육아단축자 명단 (근태상세 > 육아단축 탭 이력에서 기준일 기준으로 자동 산출) ---- */
+/* ---- 육아단축자 명단 (근태상세 > 육아단축 탭 이력에서 기준일 기준으로 자동 산출) ----
+   종합콜현황의 CPD·Call Time 2배 보정은 장기사고 팀만 필요해서, 장기사고 팀 소속만 가져옴
+   (그 외 팀은 보정이 필요 없음). */
 function getEvalReducedHoursNames(dateKey){
   if(!dateKey || typeof employees==='undefined') return [];
   const names = [];
   employees.forEach(e=>{
+    if(!(e.team||'').startsWith('장기사고')) return;
     const active = (e.parentalLeave||[]).some(p=>
       p.startDate && p.startDate<=dateKey && (!p.endDate || p.endDate>=dateKey));
     if(active) names.push(e.name);
