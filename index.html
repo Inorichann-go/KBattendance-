@@ -11154,6 +11154,101 @@ function callSummaryDeletePeriod(id){
   saveCallStatsData(); renderCallSummaryRefresh();
 }
 
+/* ---- 입력 데이터 관리(삭제) — 종합현황 화면에서 업로드·붙여넣은 원본 데이터를
+   날짜별 또는 한 번에 삭제할 수 있게 함 ---- */
+function callSummaryDateCounts(obj){
+  return Object.keys(obj||{}).sort().map(d=>({
+    date: d,
+    count: Array.isArray(obj[d]) ? obj[d].length : Object.keys(obj[d]||{}).length
+  }));
+}
+function callSummaryDeductionDateCounts(kind){
+  const m = {};
+  (callStatsStore[kind]||[]).forEach(r=>{ const d = r['날짜']||'(날짜 없음)'; m[d]=(m[d]||0)+1; });
+  return Object.keys(m).sort().map(d=>({ date:d, count:m[d] }));
+}
+function callSummaryDeleteRawDate(date){
+  if(!isAdminMode()) return;
+  if(!confirm(`${date} RAW 데이터를 전부 삭제할까요?`)) return;
+  delete callStatsStore.raw[date];
+  saveCallStatsData(); renderCallSummaryRefresh();
+}
+function callSummaryClearAllRaw(){
+  if(!isAdminMode()) return;
+  if(!Object.keys(callStatsStore.raw||{}).length) return;
+  if(!confirm('업로드된 RAW 데이터를 전부 삭제할까요? (모든 날짜)')) return;
+  callStatsStore.raw = {};
+  saveCallStatsData(); renderCallSummaryRefresh();
+}
+function callSummaryDeleteOBDate(kind, date){
+  if(!isAdminMode()) return;
+  const label = kind==='obJehu' ? '제휴 OB콜백' : '장기사고 콜보정';
+  if(!confirm(`${date} ${label} 데이터를 전부 삭제할까요?`)) return;
+  delete callStatsStore[kind][date];
+  saveCallStatsData(); renderCallSummaryRefresh();
+}
+function callSummaryClearAllOB(kind){
+  if(!isAdminMode()) return;
+  const label = kind==='obJehu' ? '제휴 OB콜백' : '장기사고 콜보정';
+  if(!Object.keys(callStatsStore[kind]||{}).length) return;
+  if(!confirm(`${label} 데이터를 전부 삭제할까요? (모든 날짜)`)) return;
+  callStatsStore[kind] = {};
+  saveCallStatsData(); renderCallSummaryRefresh();
+}
+function callSummaryDeleteDeductionDate(kind, date){
+  if(!isAdminMode()) return;
+  const label = CALL_DEDUCTION_DEFS[kind].label;
+  if(!confirm(`${date} ${label} 데이터를 전부 삭제할까요?`)) return;
+  callStatsStore[kind] = (callStatsStore[kind]||[]).filter(r=>(r['날짜']||'(날짜 없음)')!==date);
+  saveCallStatsData(); renderCallSummaryRefresh();
+}
+function callSummaryClearAllDeduction(kind){
+  if(!isAdminMode()) return;
+  const label = CALL_DEDUCTION_DEFS[kind].label;
+  if(!(callStatsStore[kind]||[]).length) return;
+  if(!confirm(`${label} 기록을 전부 삭제할까요? (모든 날짜)`)) return;
+  callStatsStore[kind] = [];
+  saveCallStatsData(); renderCallSummaryRefresh();
+}
+function callSummaryResetAll(){
+  if(!isAdminMode()) return;
+  if(!confirm('종합콜현황의 모든 입력 데이터(상담사 명단·기간·RAW·OB콜백/콜보정·휴무/근태차감)를 전부 초기화할까요?\n되돌릴 수 없어요.')) return;
+  callStatsStore = { obJehu:{}, obJanggi:{}, raw:{}, offDeduction:[], attendanceDeduction:[], roster:[], periods:[] };
+  callSummaryPeriodId = null;
+  saveCallStatsData(); renderCallSummaryRefresh();
+}
+function renderCallSummaryDataManageSection(){
+  if(!isAdminMode()) return '';
+  const rawList = callSummaryDateCounts(callStatsStore.raw);
+  const jehuList = callSummaryDateCounts(callStatsStore.obJehu);
+  const janggiList = callSummaryDateCounts(callStatsStore.obJanggi);
+  const offList = callSummaryDeductionDateCounts('offDeduction');
+  const attList = callSummaryDeductionDateCounts('attendanceDeduction');
+  const dateRow = (d, onDelete) => `<li class="center-row"><span style="flex:1;font-size:12px;">${escapeHtml(d.date)} · ${d.count}건</span>
+      <button class="btn-danger-text" onclick="${onDelete}">삭제</button></li>`;
+  const block = (title, list, onDeleteDate, onClearAll) => `
+    <div style="margin-bottom:14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:12px;font-weight:700;">${title} (${list.length}개 날짜)</span>
+        ${list.length?`<button class="btn-danger-text" onclick="${onClearAll}">전체 삭제</button>`:''}
+      </div>
+      <ul class="center-list" style="max-height:200px;">${list.length ? list.map(d=>dateRow(d, onDeleteDate(d.date))).join('') : '<li class="empty-state" style="padding:6px 0;">데이터가 없어요.</li>'}</ul>
+    </div>`;
+  return `<details class="duty-report-section" id="csDataManageBox">
+    <summary class="duty-report-section-title" style="cursor:pointer;margin:0;">🗑️ 입력 데이터 관리 · 업로드·붙여넣은 원본 데이터를 날짜별 또는 한 번에 삭제할 수 있어요</summary>
+    <div style="margin-top:10px;">
+      ${block('RAW(상담사실적통계)', rawList, d=>`callSummaryDeleteRawDate('${d}')`, `callSummaryClearAllRaw()`)}
+      ${block('제휴 OB콜백', jehuList, d=>`callSummaryDeleteOBDate('obJehu','${d}')`, `callSummaryClearAllOB('obJehu')`)}
+      ${block('장기사고 콜보정', janggiList, d=>`callSummaryDeleteOBDate('obJanggi','${d}')`, `callSummaryClearAllOB('obJanggi')`)}
+      ${block('휴무차감', offList, d=>`callSummaryDeleteDeductionDate('offDeduction','${d}')`, `callSummaryClearAllDeduction('offDeduction')`)}
+      ${block('근태차감', attList, d=>`callSummaryDeleteDeductionDate('attendanceDeduction','${d}')`, `callSummaryClearAllDeduction('attendanceDeduction')`)}
+    </div>
+    <div style="margin-top:4px;padding-top:10px;border-top:1px solid var(--border);">
+      <button class="btn-danger-text" onclick="callSummaryResetAll()">⚠️ 전체 초기화 (명단·기간·RAW·OB·차감 전부 삭제)</button>
+    </div>
+  </details>`;
+}
+
 /* ---- 상담사 명단 ---- */
 function callRosterEdit(idx, key, value){
   if(!isAdminMode()){ setTimeout(renderCallSummaryRefresh, 0); return; }
@@ -11168,6 +11263,13 @@ function callRosterDelete(idx){
   const p = (callStatsStore.roster||[])[idx]; if(!p) return;
   if(!confirm(`${p.name}님을 명단에서 뺄까요?`)) return;
   callStatsStore.roster.splice(idx,1);
+  saveCallStatsData(); renderCallSummaryRefresh();
+}
+function callRosterClearAll(){
+  if(!isAdminMode()) return;
+  if(!(callStatsStore.roster||[]).length) return;
+  if(!confirm(`상담사 명단 ${callStatsStore.roster.length}명을 전부 삭제할까요?`)) return;
+  callStatsStore.roster = [];
   saveCallStatsData(); renderCallSummaryRefresh();
 }
 function callRosterAdd(sabun, name, team){
@@ -11310,7 +11412,7 @@ function renderCallSummaryView(){
       <button class="btn-primary" id="csPeriodSaveBtn" onclick="callSummarySavePeriod()">기간 추가</button>
     </div>`:''}
   </details>`;
-  if(!period) return `<div class="duty-report-view">${periodEditor}</div>`;
+  if(!period) return `<div class="duty-report-view">${periodEditor}${renderCallSummaryDataManageSection()}</div>`;
 
   const ref = (callSummaryRefDate && callSummaryRefDate>=period.start && callSummaryRefDate<=period.end) ? callSummaryRefDate : callSummaryDefaultRef(period);
   callSummaryRefDate = ref;
@@ -11389,6 +11491,7 @@ function renderCallSummaryView(){
         ${isAdmin?`<label class="btn-secondary">📤 상담사 명단 업로드<input type="file" accept=".xlsx,.xls" hidden onchange="onCallRosterImport(event)"></label>`:''}
         <button class="btn-secondary" onclick="downloadCallRosterTemplate()">📥 양식 다운로드</button>
         ${isAdmin?`<button class="btn-secondary" onclick="callRosterAdd()">+ 직접 추가</button>`:''}
+        ${isAdmin && roster.length?`<button class="btn-danger-text" onclick="callRosterClearAll()">명단 전체 삭제</button>`:''}
         <span class="duty-month-hint" style="flex-basis:auto;">양식: 이름 · 사번 · 팀 · 입사일. 이름은 OB·휴무·근태 데이터와 맞출 때 쓰여요(대소문자 무시). 단시간(4시간) 근무자는 표에서 체크하면 근무일을 240분 기준으로 계산하고, 다시 올려도 유지돼요.</span>
       </div>
       ${roster.length?`<div class="duty-table-scroll" style="max-height:420px;margin-top:10px;">
@@ -11400,6 +11503,8 @@ function renderCallSummaryView(){
     ${renderCallChildcareSection(ref)}
 
     ${periodEditor}
+
+    ${renderCallSummaryDataManageSection()}
   </div>`;
 }
 </script>
