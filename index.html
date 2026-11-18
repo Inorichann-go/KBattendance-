@@ -10334,25 +10334,17 @@ function callJehuSheetDayCols(sheetName, rows){
   });
   return {sheetMonth, year, headerRowIdx, dayCols};
 }
-async function onCallObJehuUpload(ev){
-  if(!isAdminMode()){ ev.target.value=''; return; }
-  const file = ev.target.files[0]; if(!file) return;
-  const target = callInputDate;
-  const [ty, tm] = target.split('-').map(Number);
-  try{
-    const wb = await readWorkbookFromFile(file);
-    /* 월 경계일(예: 10월 시트 끝 "30일" / 11월 시트 시작 "30일")은 두 시트에 같은
-       날짜 컬럼이 겹쳐 나올 수 있음. 이때는 시트 월이 맞는 쪽이 아니라, 실제 값이
-       더 많이 채워진(완성도 높은) 쪽을 우선함 — 월 전환 시점에 한쪽 시트만 아직
-       덜 채워져 있는 경우가 있기 때문 */
-    const candidates = [];
-    wb.SheetNames.forEach(sheetName=>{
-      const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {header:1, defval:null});
-      const info = callJehuSheetDayCols(sheetName, rows);
-      if(!info) return;
-      const dc = info.dayCols.find(x=>x.dateKey===target);
-      if(!dc) return;
-      const exact = info.year===ty && info.sheetMonth===tm;
+/* 파일 전체(모든 시트)에서 날짜별 후보 컬럼을 모음. 월 경계일(예: 10월 시트 끝
+   "30일" / 11월 시트 시작 "30일")은 두 시트에 같은 날짜 컬럼이 겹쳐 나올 수 있는데,
+   이때는 실제 값이 더 많이 채워진(완성도 높은) 쪽을 우선함 — 월 전환 시점에
+   한쪽 시트만 아직 덜 채워져 있는 경우가 있기 때문 */
+function callJehuExtractAllDates(wb){
+  const byDate = {};
+  wb.SheetNames.forEach(sheetName=>{
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {header:1, defval:null});
+    const info = callJehuSheetDayCols(sheetName, rows);
+    if(!info) return;
+    info.dayCols.forEach(dc=>{
       const values = {};
       for(let r=info.headerRowIdx+1; r<rows.length; r++){
         const row = rows[r]; if(!row) continue;
@@ -10361,19 +10353,55 @@ async function onCallObJehuUpload(ev){
         if(val===null || val===undefined || val==='') continue;
         values[String(name).trim()] = numOrNull(val) || 0;
       }
-      candidates.push({ sheetName, exact, values, count:Object.keys(values).length });
+      (byDate[dc.dateKey] = byDate[dc.dateKey] || []).push({ sheetName, values, count:Object.keys(values).length });
     });
-    if(!candidates.length){ alert(`파일에서 ${callFmtDateLabel(target)} 일자 컬럼을 찾지 못했어요. 시트명(예: "26년8월")과 입력일을 확인해주세요.`); return; }
-    candidates.sort((a,b)=> b.count - a.count || (b.exact?1:0) - (a.exact?1:0));
-    const found = candidates[0];
-    const count = found.count;
-    if(!count){ alert(`"${found.sheetName}" 시트의 ${callFmtDateLabel(target)} 값이 비어 있어요.`); return; }
-    const other = candidates.find(c=>c!==found && c.count>0);
+  });
+  const result = {};
+  Object.keys(byDate).forEach(dateKey=>{
+    const cands = byDate[dateKey].sort((a,b)=>b.count-a.count);
+    const best = cands[0];
+    const other = cands.find(c=>c!==best && c.count>0);
+    result[dateKey] = { values:best.values, sheetName:best.sheetName, count:best.count, otherCount: other?other.count:0 };
+  });
+  return result;
+}
+async function onCallObJehuUpload(ev){
+  if(!isAdminMode()){ ev.target.value=''; return; }
+  const file = ev.target.files[0]; if(!file) return;
+  const target = callInputDate;
+  try{
+    const wb = await readWorkbookFromFile(file);
+    const found = callJehuExtractAllDates(wb)[target];
+    if(!found){ alert(`파일에서 ${callFmtDateLabel(target)} 일자 컬럼을 찾지 못했어요. 시트명(예: "26년8월")과 입력일을 확인해주세요.`); return; }
+    if(!found.count){ alert(`"${found.sheetName}" 시트의 ${callFmtDateLabel(target)} 값이 비어 있어요.`); return; }
     if(!callConfirmOverwrite('obJehu', '제휴 OB콜백')) return;
     callStatsStore.obJehu[target] = found.values;
     saveCallStatsData();
     renderCallRefresh();
-    alert(`제휴 OB콜백 ${callFmtDateLabel(target)} 반영 완료 ("${found.sheetName}" 시트, ${count}명)${other?`\n("${other.sheetName}" 시트에도 이 날짜 컬럼(${other.count}명)이 있었지만 값이 더 적어 제외했어요.)`:''}`);
+    alert(`제휴 OB콜백 ${callFmtDateLabel(target)} 반영 완료 ("${found.sheetName}" 시트, ${found.count}명)${found.otherCount?`\n(다른 시트에도 이 날짜 컬럼(${found.otherCount}명)이 있었지만 값이 더 적어 제외했어요.)`:''}`);
+  }catch(err){
+    console.error(err);
+    alert('제휴 OB콜백 파일을 읽는 중 문제가 발생했어요.');
+  }finally{
+    ev.target.value='';
+  }
+}
+/* 파일에 들어있는 모든 날짜 컬럼을 한 번에 등록 (일별로 입력일을 바꿔가며 올릴 필요 없이, 월별 파일 하나로 몇 달치를 한 번에 반영) */
+async function onCallObJehuBulkUpload(ev){
+  if(!isAdminMode()){ ev.target.value=''; return; }
+  const file = ev.target.files[0]; if(!file) return;
+  try{
+    const wb = await readWorkbookFromFile(file);
+    const allDates = callJehuExtractAllDates(wb);
+    const dateKeys = Object.keys(allDates).filter(d=>allDates[d].count>0).sort();
+    if(!dateKeys.length){ alert('파일에서 유효한 날짜 데이터를 찾지 못했어요.'); return; }
+    const existing = dateKeys.filter(d=>(callStatsStore.obJehu||{})[d] && Object.keys(callStatsStore.obJehu[d]).length);
+    if(existing.length && !confirm(`이미 입력된 날짜 ${existing.length}일을 포함해 총 ${dateKeys.length}일치 데이터를 파일 값으로 덮어쓸까요?`)) return;
+    dateKeys.forEach(d=>{ callStatsStore.obJehu[d] = allDates[d].values; });
+    saveCallStatsData();
+    renderCallRefresh();
+    const shown = dateKeys.length>8 ? `${dateKeys.slice(0,3).join(', ')} … ${dateKeys.slice(-3).join(', ')}` : dateKeys.join(', ');
+    alert(`제휴 OB콜백 일괄 등록 완료 (${dateKeys.length}일치)\n반영된 날짜: ${shown}`);
   }catch(err){
     console.error(err);
     alert('제휴 OB콜백 파일을 읽는 중 문제가 발생했어요.');
@@ -10383,6 +10411,25 @@ async function onCallObJehuUpload(ev){
 }
 
 /* ---- 2. 장기사고 콜보정 업로드 (일별 시트 여러개 → 선택한 입력일 시트만 읽음) ---- */
+/* 시트 하나(하루치)에서 '오비/콜백' 헤더를 찾아 값을 읽음 */
+function callJanggiReadSheet(rows){
+  let headerRowIdx=-1, valColIdx=-1;
+  for(let r=0; r<Math.min(rows.length,4); r++){
+    const row = rows[r]||[];
+    const idx = row.findIndex(c=> typeof c==='string' && c.replace(/\s/g,'').includes('오비/콜백'));
+    if(idx>=0){ headerRowIdx=r; valColIdx=idx; break; }
+  }
+  if(headerRowIdx<0) return null;
+  const values = {};
+  for(let r=headerRowIdx+1; r<rows.length; r++){
+    const row = rows[r]; if(!row) continue;
+    const name = row[0]; if(!name) continue;
+    const val = row[valColIdx];
+    if(val===null||val===undefined||val==='') continue;
+    values[String(name).trim()] = numOrNull(val) || 0;
+  }
+  return values;
+}
 async function onCallObJanggiUpload(ev){
   if(!isAdminMode()){ ev.target.value=''; return; }
   const file = ev.target.files[0]; if(!file) return;
@@ -10392,22 +10439,8 @@ async function onCallObJanggiUpload(ev){
     const sheetName = wb.SheetNames.find(n=>callParseDateFromDigits(n)===target);
     if(!sheetName){ alert(`파일에 ${callFmtDateLabel(target)} 시트가 없어요. 시트명(예: "20260929")과 입력일을 확인해주세요.`); return; }
     const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {header:1, defval:null});
-    /* 헤더행에서 '오비/콜백' 컬럼 탐색 */
-    let headerRowIdx=-1, valColIdx=-1;
-    for(let r=0; r<Math.min(rows.length,4); r++){
-      const row = rows[r]||[];
-      const idx = row.findIndex(c=> typeof c==='string' && c.replace(/\s/g,'').includes('오비/콜백'));
-      if(idx>=0){ headerRowIdx=r; valColIdx=idx; break; }
-    }
-    if(headerRowIdx<0){ alert(`"${sheetName}" 시트에서 '오비/콜백' 항목을 찾지 못했어요.`); return; }
-    const values = {};
-    for(let r=headerRowIdx+1; r<rows.length; r++){
-      const row = rows[r]; if(!row) continue;
-      const name = row[0]; if(!name) continue;
-      const val = row[valColIdx];
-      if(val===null||val===undefined||val==='') continue;
-      values[String(name).trim()] = numOrNull(val) || 0;
-    }
+    const values = callJanggiReadSheet(rows);
+    if(!values){ alert(`"${sheetName}" 시트에서 '오비/콜백' 항목을 찾지 못했어요.`); return; }
     const count = Object.keys(values).length;
     if(!count){ alert(`"${sheetName}" 시트에 값이 없어요.`); return; }
     if(!callConfirmOverwrite('obJanggi', '장기사고 콜보정')) return;
@@ -10415,6 +10448,36 @@ async function onCallObJanggiUpload(ev){
     saveCallStatsData();
     renderCallRefresh();
     alert(`장기사고 콜보정 ${callFmtDateLabel(target)} 반영 완료 ("${sheetName}" 시트, ${count}명)`);
+  }catch(err){
+    console.error(err);
+    alert('장기사고 콜보정 파일을 읽는 중 문제가 발생했어요.');
+  }finally{
+    ev.target.value='';
+  }
+}
+/* 파일에 들어있는 날짜 시트를 모두 한 번에 등록 (하루씩 입력일을 바꿔가며 올릴 필요 없이, 여러 날짜 시트가 든 파일 하나로 한 번에 반영) */
+async function onCallObJanggiBulkUpload(ev){
+  if(!isAdminMode()){ ev.target.value=''; return; }
+  const file = ev.target.files[0]; if(!file) return;
+  try{
+    const wb = await readWorkbookFromFile(file);
+    const results = {};
+    wb.SheetNames.forEach(sheetName=>{
+      const dateKey = callParseDateFromDigits(sheetName);
+      if(!dateKey) return;
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {header:1, defval:null});
+      const values = callJanggiReadSheet(rows);
+      if(values && Object.keys(values).length) results[dateKey] = values;
+    });
+    const dateKeys = Object.keys(results).sort();
+    if(!dateKeys.length){ alert('파일에서 유효한 날짜 시트를 찾지 못했어요. 시트명(예: "20260929")을 확인해주세요.'); return; }
+    const existing = dateKeys.filter(d=>(callStatsStore.obJanggi||{})[d] && Object.keys(callStatsStore.obJanggi[d]).length);
+    if(existing.length && !confirm(`이미 입력된 날짜 ${existing.length}일을 포함해 총 ${dateKeys.length}일치 데이터를 파일 값으로 덮어쓸까요?`)) return;
+    dateKeys.forEach(d=>{ callStatsStore.obJanggi[d] = results[d]; });
+    saveCallStatsData();
+    renderCallRefresh();
+    const shown = dateKeys.length>8 ? `${dateKeys.slice(0,3).join(', ')} … ${dateKeys.slice(-3).join(', ')}` : dateKeys.join(', ');
+    alert(`장기사고 콜보정 일괄 등록 완료 (${dateKeys.length}일치)\n반영된 날짜: ${shown}`);
   }catch(err){
     console.error(err);
     alert('장기사고 콜보정 파일을 읽는 중 문제가 발생했어요.');
@@ -10895,11 +10958,15 @@ function renderCallInputView(){
         <div class="duty-upload-title">① 제휴 OB콜백 업로드</div>
         <div class="duty-upload-desc">제휴상담 OB/콜백 월별 파일에서 <b>${callFmtDateLabel(callInputDate)}</b> 컬럼만 읽어요.</div>
         <input type="file" accept=".xlsx,.xls" onchange="onCallObJehuUpload(event)">
+        <label class="btn-secondary" style="margin-top:6px;display:inline-block;font-size:11px;">📅 여러 날짜 한번에 등록<input type="file" accept=".xlsx,.xls" hidden onchange="onCallObJehuBulkUpload(event)"></label>
+        <div style="font-size:10.5px;color:var(--text-faint);margin-top:4px;">파일에 있는 날짜 컬럼을 전부 한 번에 반영해요(입력일 상관없이 전체 날짜).</div>
       </div>
       <div class="duty-upload-card">
         <div class="duty-upload-title">② 장기사고 콜보정 업로드</div>
         <div class="duty-upload-desc">장기사고 콜보정 파일에서 <b>${callFmtDateLabel(callInputDate)}</b> 시트만 읽어요.</div>
         <input type="file" accept=".xlsx,.xls" onchange="onCallObJanggiUpload(event)">
+        <label class="btn-secondary" style="margin-top:6px;display:inline-block;font-size:11px;">📅 여러 날짜 한번에 등록<input type="file" accept=".xlsx,.xls" hidden onchange="onCallObJanggiBulkUpload(event)"></label>
+        <div style="font-size:10.5px;color:var(--text-faint);margin-top:4px;">파일에 있는 날짜 시트를 전부 한 번에 반영해요(입력일 상관없이 전체 날짜).</div>
       </div>
       <div class="duty-upload-card">
         <div class="duty-upload-title">③ RAW(상담사실적통계) 업로드</div>
