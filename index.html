@@ -10949,11 +10949,13 @@ function callEnsureSummaryStore(){
   callStatsStore.periods = callStatsStore.periods || [];
 }
 /* 근태상세 > 육아단축 탭 이력(employees[].parentalLeave)에서 그대로 가져옴.
-   sabun을 안 채워서 아래 computeCallSummary의 이름 매칭(fallback)으로 연결됨. */
+   sabun을 안 채워서 아래 computeCallSummary의 이름 매칭(fallback)으로 연결됨.
+   근태차감(분) 보정은 장기사고 팀만 필요해서, 장기사고 팀 소속만 가져옴(그 외 팀은 보정 불필요). */
 function getCallChildcareRecords(){
   if(typeof employees==='undefined') return [];
   const out = [];
   employees.forEach(e=>{
+    if(!(e.team||'').startsWith('장기사고')) return;
     (e.parentalLeave||[]).forEach(p=>{
       if(!p.startDate) return;
       out.push({ name: e.name, start: p.startDate, end: p.endDate||'', hours: Number(p.hours)||0 });
@@ -11244,7 +11246,7 @@ function renderCallChildcareSection(ref){
       <td style="color:var(--text-soft);">${c.end?'':'종료일 없음(계속)'}</td>
     </tr>`).join('');
   return `<details class="duty-report-section" id="csChildcareBox">
-    <summary class="duty-report-section-title" style="cursor:pointer;margin:0;">👶 육아단축 근무 (${list.length}건) · 근태상세 &gt; 육아단축 탭 이력에서 자동으로 가져와요(종료된 사람은 목록에서 빠져요). 시작일~종료일 동안 (8 - 근무시간)×60분을 하루마다 근태차감으로 보정해요</summary>
+    <summary class="duty-report-section-title" style="cursor:pointer;margin:0;">👶 육아단축 근무 (${list.length}건) · 근태상세 &gt; 육아단축 탭 이력에서 장기사고 팀만 자동으로 가져와요(그 외 팀은 보정이 필요 없어 제외, 종료된 사람은 목록에서 빠져요). 시작일~종료일 동안 (8 - 근무시간)×60분을 하루마다 근태차감으로 보정해요</summary>
     ${list.length?`<div class="duty-table-scroll" style="max-height:320px;margin-top:10px;">
       <table class="duty-table call-raw-table"><thead><tr><th>상담사</th><th>시작일</th><th>종료일</th><th>근무시간</th><th>보정</th><th></th></tr></thead><tbody>${rows}</tbody></table>
     </div>`:'<div class="empty-state" style="padding:12px 0;">현재 진행중인 육아단축 이력이 없어요.</div>'}
