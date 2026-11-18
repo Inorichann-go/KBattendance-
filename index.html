@@ -10341,8 +10341,11 @@ async function onCallObJehuUpload(ev){
   const [ty, tm] = target.split('-').map(Number);
   try{
     const wb = await readWorkbookFromFile(file);
-    /* 입력일 컬럼이 있는 시트 중, 시트 월이 입력일의 월과 같은 시트를 우선 */
-    let found = null;
+    /* 월 경계일(예: 10월 시트 끝 "30일" / 11월 시트 시작 "30일")은 두 시트에 같은
+       날짜 컬럼이 겹쳐 나올 수 있음. 이때는 시트 월이 맞는 쪽이 아니라, 실제 값이
+       더 많이 채워진(완성도 높은) 쪽을 우선함 — 월 전환 시점에 한쪽 시트만 아직
+       덜 채워져 있는 경우가 있기 때문 */
+    const candidates = [];
     wb.SheetNames.forEach(sheetName=>{
       const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {header:1, defval:null});
       const info = callJehuSheetDayCols(sheetName, rows);
@@ -10350,24 +10353,27 @@ async function onCallObJehuUpload(ev){
       const dc = info.dayCols.find(x=>x.dateKey===target);
       if(!dc) return;
       const exact = info.year===ty && info.sheetMonth===tm;
-      if(!found || (exact && !found.exact)) found = {sheetName, rows, info, colIdx:dc.colIdx, exact};
+      const values = {};
+      for(let r=info.headerRowIdx+1; r<rows.length; r++){
+        const row = rows[r]; if(!row) continue;
+        const name = row[0]; if(!name) continue;
+        const val = row[dc.colIdx];
+        if(val===null || val===undefined || val==='') continue;
+        values[String(name).trim()] = numOrNull(val) || 0;
+      }
+      candidates.push({ sheetName, exact, values, count:Object.keys(values).length });
     });
-    if(!found){ alert(`파일에서 ${callFmtDateLabel(target)} 일자 컬럼을 찾지 못했어요. 시트명(예: "26년8월")과 입력일을 확인해주세요.`); return; }
-    const values = {};
-    for(let r=found.info.headerRowIdx+1; r<found.rows.length; r++){
-      const row = found.rows[r]; if(!row) continue;
-      const name = row[0]; if(!name) continue;
-      const val = row[found.colIdx];
-      if(val===null || val===undefined || val==='') continue;
-      values[String(name).trim()] = numOrNull(val) || 0;
-    }
-    const count = Object.keys(values).length;
+    if(!candidates.length){ alert(`파일에서 ${callFmtDateLabel(target)} 일자 컬럼을 찾지 못했어요. 시트명(예: "26년8월")과 입력일을 확인해주세요.`); return; }
+    candidates.sort((a,b)=> b.count - a.count || (b.exact?1:0) - (a.exact?1:0));
+    const found = candidates[0];
+    const count = found.count;
     if(!count){ alert(`"${found.sheetName}" 시트의 ${callFmtDateLabel(target)} 값이 비어 있어요.`); return; }
+    const other = candidates.find(c=>c!==found && c.count>0);
     if(!callConfirmOverwrite('obJehu', '제휴 OB콜백')) return;
-    callStatsStore.obJehu[target] = values;
+    callStatsStore.obJehu[target] = found.values;
     saveCallStatsData();
     renderCallRefresh();
-    alert(`제휴 OB콜백 ${callFmtDateLabel(target)} 반영 완료 ("${found.sheetName}" 시트, ${count}명)`);
+    alert(`제휴 OB콜백 ${callFmtDateLabel(target)} 반영 완료 ("${found.sheetName}" 시트, ${count}명)${other?`\n("${other.sheetName}" 시트에도 이 날짜 컬럼(${other.count}명)이 있었지만 값이 더 적어 제외했어요.)`:''}`);
   }catch(err){
     console.error(err);
     alert('제휴 OB콜백 파일을 읽는 중 문제가 발생했어요.');
